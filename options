@@ -1,0 +1,45 @@
+# Configuration options for DragonBSD
+
+# Location of working directories
+WORKDIR=$(dirname $0)/work
+BASEDIR=$WORKDIR/base
+BTSTRPDIR=$WORKDIR/btstrp
+BTSTRPDIR2=$WORKDIR/btstrp2
+
+# Location of packaged base system
+WORLDSRC=/home/freebsd/world.tar.bz2
+KERNELSRC=/home/freebsd/kernel.tar.bz2
+
+# Location of configuration and custom files
+FILESRC=$(dirname $0)/files
+
+# Bootstrap directories
+BTSTRPDIRS="base boot dev etc tmp"
+
+# Boostrap files to copy, moved to using rescue
+BTSTRPDIR_etc="login.conf"
+
+# Boostrap kernel options
+BTSTRPMODULES="geom_uzip unionfs zlib"
+
+# Package options
+PKGDIR=/home/freebsd/packages/All
+#PKGS="xorg-7 sudo kdebase kdegames"
+PKGS=""
+
+# Ports options
+PORTS=""
+
+# Scripts options
+SCRIPTSDIR=$(dirname $0)/scripts
+SCRIPTS="adduser trim_symbols"
+
+# Packaging option
+MKISOFLAGS="-quiet -sysid FREEBSD -rock -untranslated-filenames -max-iso9660-filenames -iso-level 4"
+
+# Make parameters
+FREEBSD_SRC=/usr/src
+MAKE_CONF=$PWD/make.conf
+MAKE_J=$(($(sysctl -n hw.ncpu) * 2))
+TMPKERNEL=/tmp/kernel
+TMPWORLD=/tmp/world

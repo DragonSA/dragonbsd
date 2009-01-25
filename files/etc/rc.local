@@ -1,0 +1,11 @@
+#!/bin/sh
+# Setup a Xorg config file
+
+XORG=`which Xorg`
+
+if [ "$?" = "0" ]
+then
+  echo "Configuring Xorg..."
+  $XORG -configure > /dev/null 2>&1
+  mv -f ~/xorg.conf.new /etc/X11/xorg.conf
+fi
