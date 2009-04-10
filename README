@@ -1,0 +1,163 @@
+0) TABLE OF CONTENT
+  1) Introduction
+  2) Live Image Types
+    2.1) ISO Type 1
+    2.2) ISO Type 2
+    2.3) ISO Type 3
+    2.4) Flash Type 1
+  3) Options and Getting Started
+    3.1) Creating World Archive
+    3.2) Creating Kernel Archive
+  4) Running the scripts
+    4.1) dragonbsd.sh
+    4.2) usbbt.sh
+
+
+
+1) INTRODUCTION
+This directory has the following files:
+ /dragonbsd.sh  - Master script for creating Live images
+ /options       - Various options for controlling the master image
+ /README        - This file
+ /TODO          - Upcoming features
+ /usbbt.sh      - Tool for writing images to devices
+and following directories:
+ /files         - Files to be copied to system image (verbatum copied)
+ /scripts       - Scripts that are run in a chroot env in the system image
+
+Combined these files can create a Live image of FreeBSD.  This image is able
+boot and run by it self (and sometimes the medium can be removed once the kernel
+has been loaded).
+
+
+
+2) LIVE IMAGE TYPES
+This script automatically creates three ISO images, each image has a different
+set of capabilities.  The script is also able to install inself onto and block
+device (such a USB Flash Memory).  Below are details for the four types:
+
+
+2.1) ISO TYPE 1
+Location: work/DragonBSD.iso
+System Image: Compressed
+Image Backing: CD/DVD (physical)
+Filesystem: Completely editable
+
+This image has a compressed system image thus takes up less physical space, this
+however comes at a cost of latency (to both read the increased sector size of 8k
+and to decompress that sector).  UZIP however does have caching.  Ff the medium
+is slow this method could actually increase read access if files are sequencilly
+allocated [benchmark required] since there will be less reading of the medium
+required.
+
+
+2.2) ISO TYPE 2
+Location: work/DragonBSD2.iso
+System Image: Compressed
+Image Backing: RAM (non-physical)
+Filesystem: Completely editable
+
+This image is loaded into RAM at boot (via loader) and is compressed to conserve
+RAM.  Although this method has some latency the only cost is decompression and,
+on modern systems, my result in faster access then that provided by hard-drives.
+(See above for latency description of UZIP, note however there is no access
+latency for reading the sector)
+
+
+2.3) ISO TYPE 3
+Location: work/DragonBSD3.iso
+System Image: Uncompressed
+Image Backing: CD/DVD (physical)
+Filesystem: Partially editable
+
+This is a very simple image with the full system being the CD/DVD.  No
+compression and limited editablilty (the FreeBSD rc.d scripts automatically
+mount various mdmfs to allow the system to run).  This is a very restrictive
+environment, networking will be limited (DHCP will not be able to setup a DNS
+resolution path).
+
+
+
+3) OPTIONS AND GETTING STARTED
+The 'options' file contains various options to control how the image is built,
+it is well documented [TODO] so start editing it with your faviourite text
+editor.  The most important variables are:
+WORKDIR   - Location of files, objected to be created (default: work/)
+WORLDSRC  - Archive of world  (see below for details)
+KERNELSRC - Archive of kernel (see below for details)
+FILESRC   - Location of files to copy accross to image
+PKGDIR    - Location of packages to install (good place is /usr/ports/packages/All)
+PKGS      - List of packages to install [TODO, further explanation]
+PORTS     - List of ports to install [TODO, further explanation]
+
+
+3.1) CREATING WORLD ARCHIVE
+These scripts require the world to be archives (does not have the ability to
+compile directly from src [TODO]).  The following is a simple approach to
+creating the atchive at $WORLDSRC:
+# mkdir /tmp/world
+# (cd /usr/src; make world distribution DESTDIR=/tmp/world)
+# tar -C /tmp/world -cjf $WORLDSRC .
+# (chflags -R 0 /tmp/world; rmdir -rf /tmp/world)
+
+
+3.2) CREATING KERNEL ARCHIVE
+These scripts require the kernel to be archives (does not have the ability to
+compile directly from src [TODO]).  The following is a simple approach to
+creating the atchive at $KERNELSRC:
+# mkdir /tmp/world
+# (cd /usr/src; make world distribution DESTDIR=/tmp/world)
+# tar -C /tmp/world -cjf $KERNELSRC .
+# (chflags -R 0 /tmp/world; rmdir -rf /tmp/world)
+
+Note: The following modules need to be compiled (either into the kernel or as a
+module):
+ - geom_label
+ - geom_uzip
+ - cd9660
+ - unionfs
+ - zlib
+
+
+
+4) RUNNING THE SCRIPTS
+Once the options have been set, the archives created, the packages created and
+files/ populated the scripts are ready to be run.  The first step is to create
+the system images.  This is done by running dragonbsd.sh.  Optionally, the
+image can be loaded onto a blokc device by running usbbt.sh.  Below are the
+instructions:
+
+4.1) dragonbsd.sh
+To start just run
+# ./dragonbsd.sh
+and the three ISO images will be created under work/.
+
+Once this is done various subdirectories can be edited and the system images
+recreated.  work/base/ contains the system, and when edited a full rebuild is
+required.  work/btstrp/ contains the code for ISO Type 2 (DragonBSD2.iso), the
+system is already compressed.  work/btstrp2/ contains the code for ISO Type 1
+(DragonBSD.iso), the system is already compressed.  The folling dragonbsd.sh
+options can be used to recreate the system images:
+  rebuild     - A full rebuild of the system images (creates the compressed
+                system used by ISO Type 1/2)
+  rebuildiso) - Rebuilds the DragonBSD*.iso images (implied by rebuild above)
+
+Once completed the working directory can be erased with:
+# ./dragonbsd.sh clean
+Please use this method as some mount points may exists under work/ and a simple
+# rm -rf work/   ## And can cause untold destruction and pain.  Be warned!!!
+
+
+4.2) usbbd.sh
+This creates a system image similar to a ISO Type 1 except the alterations of
+the system are perpatual (remains after a reboot) since a second partition is
+created on the block device that contains the alterations.
+
+WARNING: MAKE SURE THE DEVICE USED DOES NOT CONTAIN ANYTHING VALUABLE ON IT.
+         Like your home directory, backups or your CURRENT SYSTEM since the
+         content of the device will be permenantly ERASED!!!
+[TODO: Make sure the device is not currently mounted]
+
+# ./usbbt.sh /dev/da0
+
+To load the system onto the first da device (usually a flash memory stick).

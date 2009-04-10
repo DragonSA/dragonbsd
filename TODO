@@ -10,9 +10,11 @@
  - Add support for multi-layered compressed images
 
 0.0.1:
- - Add OS version test 
+ - Add OS version test
  - Add utils check
  - Abstract commands (i.e. make mv -> $MV)
  - Use install as far as possible
  - Integrate usbbt into dragonbsd
  - Extend scripts and make more modular
+ - Check devfs hack still required for unionfs?
+ - tmpfs supports unionfs?
