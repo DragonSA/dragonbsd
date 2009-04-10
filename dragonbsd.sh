@@ -280,17 +280,11 @@ then
   mount /dev/ufs/DragonBSD /tmp
   mount -t unionfs -o noatime -o copymode=transparent /tmp /base
 else
-  echo -n "Overlay mdmfs [yes/no] (no): "
-  read answer
-  case \$answer in
-    [Yy][Ee][Ss]|[Yy][Ee]|[Yy])
-      echo "Allocating temporary filesystem:"
-      mdmfs -s 32m md /tmp
+  echo "Allocating temporary filesystem:"
+  mdmfs -s 32m md /tmp
 
-      echo "Overlaying temporary filesystem:"
-      mount -t unionfs -o noatime -o copymode=transparent /tmp /base
-      ;;
-  esac
+  echo "Overlaying temporary filesystem:"
+  mount -t unionfs -o noatime -o copymode=transparent /tmp /base
 fi
 
 mount -t devfs devfs /base/dev
@@ -325,7 +319,7 @@ finishBootstrap2() {
 dragonroot_load="YES"
 dragonroot_type="mfs_root"
 dragonroot_name="/boot/dragonroot"
-vfs.root.mountfrom="ufs:/dev/md0"
+vfs.root.mountfrom="ufs:/dev/ufs/DragonBSDBase"
 _EOF
 
 }
@@ -446,6 +440,9 @@ fi
 _EOF
 
   makefs $BTSTRPDIR2/boot/dragonroot $BTSTRPDIR
+  mddev=$(mdconfig -a -t vnode -f $BTSTRPDIR2/boot/dragonroot)
+  tunefs -L DragonBSDBase /dev/$mddev
+  mdconfig -d -u $mddev
   gzip -f9 $BTSTRPDIR2/boot/dragonroot
 
   mv $WORKDIR/boot $BTSTRPDIR/
@@ -469,17 +466,15 @@ packageISO() {
 
   }
 
-  patchLoader $BASEDIR
-  mkisofs $MKISOFLAGS -b boot/cdboot --no-emul-boot -volid DragonBSD -o $WORKDIR/DragonBSD3.iso $BASEDIR
-  unpatchLoader $BASEDIR
-
   patchLoader $BTSTRPDIR
   mkisofs $MKISOFLAGS -b boot/cdboot --no-emul-boot -volid DragonBSD -o $WORKDIR/DragonBSD.iso $BTSTRPDIR 
   unpatchLoader $BTSTRPDIR
 
-  patchLoader $BTSTRPDIR2
   mkisofs $MKISOFLAGS -b boot/cdboot --no-emul-boot -volid DragonBSD -o $WORKDIR/DragonBSD2.iso $BTSTRPDIR2
-  unpatchLoader $BTSTRPDIR2
+
+  patchLoader $BASEDIR
+  mkisofs $MKISOFLAGS -b boot/cdboot --no-emul-boot -volid DragonBSD -o $WORKDIR/DragonBSD3.iso $BASEDIR
+  unpatchLoader $BASEDIR
 
 }
 
