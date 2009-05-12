@@ -440,9 +440,7 @@ fi
 _EOF
 
   makefs $BTSTRPDIR2/boot/dragonroot $BTSTRPDIR
-  mddev=$(mdconfig -a -t vnode -f $BTSTRPDIR2/boot/dragonroot)
-  tunefs -L DragonBSDBase /dev/$mddev
-  mdconfig -d -u $mddev
+  tunefs -L DragonBSDBase $BTSTRPDIR2/boot/dragonroot
   gzip -f9 $BTSTRPDIR2/boot/dragonroot
 
   mv $WORKDIR/boot $BTSTRPDIR/
