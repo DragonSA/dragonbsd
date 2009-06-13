@@ -22,7 +22,7 @@ This directory has the following files:
  /TODO          - Upcoming features
  /usbbt.sh      - Tool for writing images to devices
 and following directories:
- /files         - Files to be copied to system image (verbatum copied)
+ /files         - Files to be copied to system image (verbatim copied)
  /scripts       - Scripts that are run in a chroot env in the system image
 
 Combined these files can create a Live image of FreeBSD.  This image is able
@@ -46,7 +46,7 @@ Filesystem: Completely editable
 This image has a compressed system image thus takes up less physical space, this
 however comes at a cost of latency (to both read the increased sector size of 8k
 and to decompress that sector).  UZIP however does have caching.  Ff the medium
-is slow this method could actually increase read access if files are sequencilly
+is slow this method could actually increase read access if files are sequentially
 allocated [benchmark required] since there will be less reading of the medium
 required.
 
@@ -71,7 +71,7 @@ Image Backing: CD/DVD (physical)
 Filesystem: Partially editable
 
 This is a very simple image with the full system being the CD/DVD.  No
-compression and limited editablilty (the FreeBSD rc.d scripts automatically
+compression and limited edibility (the FreeBSD rc.d scripts automatically
 mount various mdmfs to allow the system to run).  This is a very restrictive
 environment, networking will be limited (DHCP will not be able to setup a DNS
 resolution path).
@@ -80,12 +80,12 @@ resolution path).
 
 3) OPTIONS AND GETTING STARTED
 The 'options' file contains various options to control how the image is built,
-it is well documented [TODO] so start editing it with your faviourite text
+it is well documented [TODO] so start editing it with your favourite text
 editor.  The most important variables are:
 WORKDIR   - Location of files, objected to be created (default: work/)
 WORLDSRC  - Archive of world  (see below for details)
 KERNELSRC - Archive of kernel (see below for details)
-FILESRC   - Location of files to copy accross to image
+FILESRC   - Location of files to copy across to image
 PKGDIR    - Location of packages to install (good place is /usr/ports/packages/All)
 PKGS      - List of packages to install [TODO, further explanation]
 PORTS     - List of ports to install [TODO, further explanation]
@@ -94,7 +94,7 @@ PORTS     - List of ports to install [TODO, further explanation]
 3.1) CREATING WORLD ARCHIVE
 These scripts require the world to be archives (does not have the ability to
 compile directly from src [TODO]).  The following is a simple approach to
-creating the atchive at $WORLDSRC:
+creating the archive at $WORLDSRC:
 # mkdir /tmp/world
 # (cd /usr/src; make world distribution DESTDIR=/tmp/world)
 # tar -C /tmp/world -cjf $WORLDSRC .
@@ -104,7 +104,7 @@ creating the atchive at $WORLDSRC:
 3.2) CREATING KERNEL ARCHIVE
 These scripts require the kernel to be archives (does not have the ability to
 compile directly from src [TODO]).  The following is a simple approach to
-creating the atchive at $KERNELSRC:
+creating the archive at $KERNELSRC:
 # mkdir /tmp/world
 # (cd /usr/src; make world distribution DESTDIR=/tmp/world)
 # tar -C /tmp/world -cjf $KERNELSRC .
@@ -124,7 +124,7 @@ module):
 Once the options have been set, the archives created, the packages created and
 files/ populated the scripts are ready to be run.  The first step is to create
 the system images.  This is done by running dragonbsd.sh.  Optionally, the
-image can be loaded onto a blokc device by running usbbt.sh.  Below are the
+image can be loaded onto a block device by running usbbt.sh.  Below are the
 instructions:
 
 4.1) dragonbsd.sh
@@ -150,12 +150,12 @@ Please use this method as some mount points may exists under work/ and a simple
 
 4.2) usbbd.sh
 This creates a system image similar to a ISO Type 1 except the alterations of
-the system are perpatual (remains after a reboot) since a second partition is
+the system are perpetual (remains after a reboot) since a second partition is
 created on the block device that contains the alterations.
 
 WARNING: MAKE SURE THE DEVICE USED DOES NOT CONTAIN ANYTHING VALUABLE ON IT.
          Like your home directory, backups or your CURRENT SYSTEM since the
-         content of the device will be permenantly ERASED!!!
+         content of the device will be permanently ERASED!!!
 [TODO: Make sure the device is not currently mounted]
 
 # ./usbbt.sh /dev/da0
