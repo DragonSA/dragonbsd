@@ -1,10 +1,24 @@
 #!/bin/sh
 
+if [ "$(whoami)" != "root" ]
+then
+  echo "You are not root, attempting to change to root..."
+  if which sudo > /dev/null
+  then
+    echo "Executing: sudo $0 $*"
+    sudo $0 $*
+  else
+    echo "Executing: su root - -c $0 $*"
+    su root - -c $0 $*
+  fi
+  exit
+fi
+
 . $(dirname $0)/options
 
 # Stage 1: Prepare base system
 # Stage 1.1: Uses prepackaged base
-# Stage 1.2: Uses prepackaged kernel 
+# Stage 1.2: Uses prepackaged kernel
 # Stage 1.3: Copy user defined configuration files
 #
 # Stage 2: Prepare bootstrap from base system
@@ -59,7 +73,7 @@ stage2() {
 }
 
 stage3() {
-  
+
   echo ">>> Stage 3: Installing additional software"
   echo " >>> Stage 3.1: Installing additional software from packages"
   installPorts
@@ -84,16 +98,6 @@ stage4() {
 
 }
 
-if [ "$(whoami)" != "root" ]
-then
-  echo "You are not root, attempting to change to root..."
-  echo "Executing: su root - -c $0 $*"
-  if ! su root - -c $0 $*
-  then
-    echo "Unable to change to root, please run $0 as root"
-  fi
-fi
-
 runstage() {
 
   if [ "$1" = "-f" ]
@@ -104,7 +108,7 @@ runstage() {
     then
       echo ">>> Skipping Stage $(echo $1 | sed 's|stage||')"
       return
-    fi 
+    fi
   fi
   $1
   touch $WORKDIR/.done-$1
@@ -134,9 +138,9 @@ prepareWork() {
       fi
     fi
   done
-  
-  mkdir -p $WORKDIR 
-  mkdir -p $BASEDIR 
+
+  mkdir -p $WORKDIR
+  mkdir -p $BASEDIR
   mkdir -p $BTSTRPDIR
   mkdir -p $BTSTRPDIR2
 
@@ -272,7 +276,7 @@ PATH=/rescue
 trap 'echo Recovery console: ; PATH=/rescue /rescue/csh -i ; exit' 1 2 3 6 15
 
 echo "Mounting compressed base:"
-mount -o ro /dev/\$(mdconfig -a -t vnode -o readonly -f /base.uzip).uzip /base 
+mount -o ro /dev/\$(mdconfig -a -t vnode -o readonly -f /base.uzip).uzip /base
 
 if [ -w /dev/ufs/DragonBSD ]
 then
@@ -465,7 +469,7 @@ packageISO() {
   }
 
   patchLoader $BTSTRPDIR
-  mkisofs $MKISOFLAGS -b boot/cdboot --no-emul-boot -volid DragonBSD -o $WORKDIR/DragonBSD.iso $BTSTRPDIR 
+  mkisofs $MKISOFLAGS -b boot/cdboot --no-emul-boot -volid DragonBSD -o $WORKDIR/DragonBSD.iso $BTSTRPDIR
   unpatchLoader $BTSTRPDIR
 
   mkisofs $MKISOFLAGS -b boot/cdboot --no-emul-boot -volid DragonBSD -o $WORKDIR/DragonBSD2.iso $BTSTRPDIR2
@@ -494,7 +498,7 @@ else
       ;;
     clean)
       for i in `mount | grep $WORKDIR | cut -f 3 -d ' ' | sort -r`
-      do 
+      do
         umount $i
       done
       chflags -R 0 $WORKDIR
