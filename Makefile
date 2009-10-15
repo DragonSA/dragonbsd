@@ -14,13 +14,14 @@ BASEDIR?=	${WORKDIR}/base
 BOOTSTRAPDIR?=	${WORKDIR}/bootstrap
 
 ## Source files
-DISTFILES?=	distfiles
+DISTFILES?=	${PWD}/distfiles
 KERNELSRC?=	${DISTFILES}/kernel.tar.bz2
-FILESRC?=	files
+FILESRC?=	${PWD}/files
 WORLDSRC?=	${DISTFILES}/world.tar.bz2
 PKGDIR?=	${DISTFILES}/packages
 
-PKGS=python
+PKGS?=
+PORTS?=
 
 ## Bootstrap information
 BOOTSTRAPDIRS+=		base boot dev overlay usr/lib
@@ -51,6 +52,7 @@ KERNEL_EXTRACT_COOKIE=	${WORKDIR}/.kernel_extract-done
 LOADER_COOKIE=		${WORKDIR}/.loader-done
 PACKAGE_COOKIE=		${WORKDIR}/.package-done
 PATCH_COOKIE=		${WORKDIR}/.patch-done
+PORTS_COOKIE=		${WORKDIR}/.ports-done
 WORKDIR_COOKIE=		${WORKDIR}/.workdir-done
 WORLD_EXTRACT_COOKIE=	${WORKDIR}/.world_extract-done
 
@@ -67,7 +69,7 @@ live: live-iso live-ufs
 
 clean:
 	@echo "===> Cleaning working area..."
-	[ -z "`mount | grep ${BASEDIR}`" ] || umount `mount | grep ${BASEDIR} | cut -f 3 -d ' '`
+	[ -z "`mount | grep ${BASEDIR}`" ] || umount `mount | grep ${BASEDIR} | cut -f 3 -d ' ' | sort -r`
 	-rm -rf ${WORKDIR} 2> /dev/null || (chflags -R 0 ${WORKDIR}; rm -r ${WORKDIR})
 
 iso: ${ISOFILE}
@@ -99,7 +101,7 @@ ${BASEDIR_COOKIE}: ${WORKDIR_COOKIE}
 
 	@touch ${BASEDIR_COOKIE}
 
-${BASE_COOKIE}: ${CONFIG_COPY_COOKIE} ${PACKAGE_COOKIE}
+${BASE_COOKIE}: ${CONFIG_COPY_COOKIE} ${PORTS_COOKIE}
 	@touch ${BASE_COOKIE}
 
 ${BOOTSTRAP_COOKIE}: ${BOOTSTRAPSCRIPT_COOKIE} ${COMPRESS_COOKIE}
@@ -242,11 +244,12 @@ ${BASECOMPRESSEDIMAGE}: ${BASEIMAGE}
 
 ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
 	@echo "===> Installing packages..."
-	[ -z "`mount | grep ${BASEDIR}`" ] || umount `mount | grep ${BASEDIR} | cut -f 3 -d ' '`
+	[ -z "`mount | grep ${BASEDIR}`" ] || umount `mount | grep ${BASEDIR} | cut -f 3 -d ' ' | sort -r`
 	mount -t devfs devfs ${BASEDIR}/dev
 	mount -t nullfs ${PKGDIR} ${BASEDIR}/mnt
-.	for PKG in ${PKGS}
-		pkgs=`cd ${BASEDIR}/mnt; echo ${PKG}*`; \
+	for PKG in ${PKGS}; \
+	do \
+		pkgs=`cd ${BASEDIR}/mnt; echo $${PKG}*t[bg]z`; \
 		if [ -n "$${pkgs}" ]; \
 		then \
 			echo "==> Installing packages: $${pkgs}"; \
@@ -254,11 +257,49 @@ ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
 			  (umount ${BASEDIR}/dev ${BASEDIR}/mnt; false); \
 		else \
 			echo "==> No packages with name ${PKG}"; \
-		fi
-.	endfor
+		fi; \
+	done
 	umount ${BASEDIR}/dev ${BASEDIR}/mnt
 
 	touch ${PACKAGE_COOKIE}
+
+MOUNTDIRS=${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd/packages ${BASEDIR}/tmp ${BASEDIR}/dev ${BASEDIR}/usr/freebsd ${BASEDIR}/usr/ports
+
+${PORTS_COOKIE}: ${PACKAGE_COOKIE}
+	@echo "===> Installing ports..."
+	[ -z "`mount | grep ${BASEDIR}`" ] || umount `mount | grep ${BASEDIR} | cut -f 3 -d ' ' | sort -r`
+	mkdir -p ${BASEDIR}/usr/ports ${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd
+	mount -t nullfs /usr/ports ${BASEDIR}/usr/ports
+	mount -t nullfs /usr/freebsd ${BASEDIR}/usr/freebsd
+	mount -t devfs devfs ${BASEDIR}/dev
+	mount -t tmpfs tmpfs ${BASEDIR}/tmp
+	mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
+	mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/ports/packages
+	-(cd ${BASEDIR}/usr/ports/packages; ln -s . All)
+
+	for PORT in ${PORTS}; \
+	do \
+		if [ -d ${BASEDIR}/usr/ports/$${PORT} ]; \
+		then \
+			pkg=`chroot ${BASEDIR} make -C /usr/ports/$${PORT} package-name`; \
+			if [ ! -f "`echo ${BASEDIR}/usr/ports/packages/$${pkg}.t[bg]z`" ]; \
+			then \
+				echo "==> Building port: $${PORT}"; \
+				chroot ${BASEDIR} make -C /usr/ports/$${PORT} install package-recursive clean BATCH=yes DEPENDS_CLEAN=yes NOCLEANDEPENDS=yes || \
+				  (umount ${MOUNTDIRS}; false); \
+			else \
+				echo "==> Installing port: $${PORT} ($${pkg})"; \
+				chroot ${BASEDIR} sh -c "cd /usr/ports/packages/All && pkg_add -F $${pkg}.t[bg]z" || \
+				  (umount ${MOUNTDIRS}; false); \
+			fi; \
+		else \
+			echo "==> No port with name $${PORT}"; \
+		fi; \
+	done
+
+	umount ${MOUNTDIRS}
+
+	touch ${PORTS_COOKIE}
 
 # Create an ISO image (from the base image)
 ${ISOFILE}: ${BASE_COOKIE}
