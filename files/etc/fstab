@@ -1,0 +1,3 @@
+proc			/proc		procfs	rw		0	0
+tmpfs			/tmp		tmpfs	rw		0	0
+
