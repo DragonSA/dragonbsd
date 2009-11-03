@@ -29,11 +29,11 @@ BOOTSTRAPFILES+=	etc/login.conf
 BOOTSTRAPMODULES+=	geom_uzip unionfs zlib
 
 ## Target images
-BASEIMAGE?=		${WORKDIR}/base.ufs
 BASECOMPRESSEDIMAGE?=	${WORKDIR}/base.ufs.uzip
 ISOFILE?=		${WORKDIR}/dragonbsd.iso
 ISOLIVEFILE?=		${WORKDIR}/dragonbsd-live.iso
-UFSLIVEFILE?=		${WORKDIR}/dragonbsd.ufs
+UFSFILE?=		${WORKDIR}/dragonbsd.ufs
+UFSLIVEFILE?=		${WORKDIR}/dragonbsd-live.ufs
 
 ## Sundry
 MKISOFLAGS=	-quiet -sysid FREEBSD -rock -untranslated-filenames -max-iso9660-filenames -iso-level 4
@@ -57,36 +57,80 @@ WORKDIR_COOKIE=		${WORKDIR}/.workdir-done
 WORLD_EXTRACT_COOKIE=	${WORKDIR}/.world_extract-done
 
 #.SILENT:
-.ORDER: ${ISOFILE} ${BASEIMAGE}
+.ORDER: ${ISOFILE} ${UFSFILE}
 .ORDER: ${ISOLIVEEFILE} ${UFSLIVEFILE} ${ISOFILE}
 .ORDER: partition_usb copy_ufs
 
-.PHONY: all live clean iso live-iso live-ufs usb partition_usb copy_ufs
+.PHONY: usage help all live clean iso iso-live ufs ufs-live usb usb-live partition_usb copy_ufs
 
-all: iso live-iso live-ufs
+usage:
+	@echo "usage: make [targets]"
 
-live: live-iso live-ufs
+help: usage
+	@echo
+	@echo "Creates an image file containing a full FreeBSD distribution.  The image format"
+	@echo "can be specified ('ISO' for CD/DVD or 'UFS' for mass storage).  The type of"
+	@echo "bootable system can also be specified ('normal' or 'live')."
+	@echo
+	@echo "Multiple targets
+	@echo
+	@echo "The following targets are available:"
+	@echo "Types:"
+	@echo "	iso		Creates a ISO image"
+	@echo "	iso-live	Creates a live ISO image"
+	@echo "	ufs		Creates a UFS image"
+	@echo "	ufs-live	Creates a live UFS image"
+	@echo
+	@echo "Composites:"
+	@echo "	all		Creates all the types above"
+	@echo "	live		Creates all the live types above"
+	@echo
+	@echo "Utilities:"
+	@echo "	clean		Remove all working files
+	@echo "	usb		Writes a UFS image to a (USB) mass storage device*"
+	@echo "	usb-live	Writes a live UFS image to a (USB) mass storage device*"
+	@echo "*the device to write to must be specified using DEV (eg make usb DEV=/dev/da0)"
+	@echo
+	@echo "Help:"
+	@echo "	help		Displays this help message"
+	@echo "	help-[type]	Displays discription for [type] image (from above) [TODO]"
+	@echo "	help-config	Displays information for customising a system image [TODO]"
+	@echo
+	@echo "???For further help see the manual pages (eg man dragonbsd) [TODO]"
+
+all: iso iso-live ufs ufs-live
+
+live: iso-live ufs-live
 
 clean:
 	@echo "===> Cleaning working area..."
 	[ -z "`mount | grep ${BASEDIR}`" ] || umount `mount | grep ${BASEDIR} | cut -f 3 -d ' ' | sort -r`
-	-rm -rf ${WORKDIR} 2> /dev/null || (chflags -R 0 ${WORKDIR}; rm -r ${WORKDIR})
+	-rm -rf ${WORKDIR} 2> /dev/null || (chflags -R 0 ${WORKDIR}; rm -rf ${WORKDIR})
 
 iso: ${ISOFILE}
-	@echo "=== Created ISO image ${ISOFILE} ==="
+	@echo "=== Created ISO image: ${ISOFILE} ==="
 
-live-iso: ${ISOLIVEFILE}
-	@echo "=== Created live ISO image ${ISOLIVEFILE} ==="
+iso-live: ${ISOLIVEFILE}
+	@echo "=== Created live ISO image: ${ISOLIVEFILE} ==="
 
-live-ufs: ${UFSLIVEFILE}
-	@echo "=== Created live UFS image ${UFSLIVEFILE} ==="
+ufs: ${UFSFILE}
+	@echo "=== Created UFS image: ${UFSFILE} ==="
+
+ufs-live: ${UFSLIVEFILE}
+	@echo "=== Created live UFS image: ${UFSLIVEFILE} ==="
 
 usb:
 	@[ -n "${DEV}" ] || (echo "Please specify a device using make ufs DEV=..."; false)
 	@[ -c ${DEV} ] || (echo "Please specify a valid character device"; false)
+	@echo "===> Writing UFS image to ${DEV}"
+	make partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSFILE} BASENAME=DragonBSD SUPPNAME=DragonBSD2
+
+
+usb-live:
+	@[ -n "${DEV}" ] || (echo "Please specify a device using make ufs DEV=..."; false)
+	@[ -c ${DEV} ] || (echo "Please specify a valid character device"; false)
 	@echo "===> Writing live UFS image to ${DEV}"
-	make ${UFSLIVEFILE}
-	make partition_usb copy_ufs DEV=${DEV}
+	make partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSLIVEFILE} BASENAME=DragonBSDBase SUPPNAME=DragonBSD
 
 ${WORKDIR_COOKIE}:
 	@echo "===> Making working directory"
@@ -194,7 +238,7 @@ ${KERNEL_COPY_COOKIE}: ${PATCH_COOKIE}
 # Compress kernel objects
 ${COMPRESS_COOKIE}: ${KERNEL_COPY_COOKIE}
 	@echo "===> Compressing the kernel"
-	gzip -f9 ${BOOTSTRAPDIR}/boot/kernel/*
+	gzip -f9 ${BOOTSTRAPDIR}/boot/kernel/* ${BOOTSTRAPDIR}/boot/modules/*
 
 	@touch ${COMPRESS_COOKIE}
 
@@ -233,14 +277,9 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 
 	@touch ${BOOTSTRAPSCRIPT_COOKIE}
 
-# Create and compress the base image
-${BASEIMAGE}: ${BASE_COOKIE}
-	@echo "===> Creating UFS Image of filesystem..."
-	makefs ${BASEIMAGE} ${BASEDIR}
-
-${BASECOMPRESSEDIMAGE}: ${BASEIMAGE}
+${BASECOMPRESSEDIMAGE}: ${UFSFILE}
 	@echo "===> Compressing UFS Image of filesystem..."
-	mkuzip -s 8192 -o ${BASECOMPRESSEDIMAGE} ${BASEIMAGE}
+	mkuzip -s 8192 -o ${BASECOMPRESSEDIMAGE} ${UFSFILE}
 
 ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
 	@echo "===> Installing packages..."
@@ -263,7 +302,7 @@ ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
 
 	touch ${PACKAGE_COOKIE}
 
-MOUNTDIRS=${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd/packages ${BASEDIR}/tmp ${BASEDIR}/dev ${BASEDIR}/usr/freebsd ${BASEDIR}/usr/ports
+MOUNTDIRS=${BASEDIR}/tmp ${BASEDIR}/dev ${BASEDIR}/usr/freebsd ${BASEDIR}/usr/ports #${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd/packages
 
 ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 	@echo "===> Installing ports..."
@@ -273,8 +312,8 @@ ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 	mount -t nullfs /usr/freebsd ${BASEDIR}/usr/freebsd
 	mount -t devfs devfs ${BASEDIR}/dev
 	mount -t tmpfs tmpfs ${BASEDIR}/tmp
-	mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
-	mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/ports/packages
+	#mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
+	#mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/ports/packages
 	-(cd ${BASEDIR}/usr/ports/packages; ln -s . All)
 
 	for PORT in ${PORTS}; \
@@ -328,6 +367,18 @@ ${ISOLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	mv ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
 	rm ${BOOTSTRAPDIR}/base.ufs.uzip
 
+# Create an UFS image (from the base image)
+${UFSFILE}: ${BASE_COOKIE}
+	@echo "===> Creating UFS Image"
+	cp -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
+	echo >> ${BASEDIR}/boot/loader.conf
+	echo "vfs.root.mountfrom=\"ufs:/dev/ufs/DragonBSD\"" >> ${BASEDIR}/boot/loader.conf
+
+	makefs ${UFSFILE} ${BASEDIR} \
+	  || (mv ${WORKDIR}/loader.conf ${BASEDIR}/boot/; false)
+
+	mv ${WORKDIR}/loader.conf ${BASEDIR}/boot/
+
 ${UFSLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	@echo "===> Creating Live UFS image"
 	cp -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
@@ -342,19 +393,19 @@ ${UFSLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	mv ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
 	rm ${BOOTSTRAPDIR}/base.ufs.uzip
 
-partition_usb: ${UFSLIVEFILE}
+partition_usb: ${IMAGEFILE}
 	@echo "Partitioning device ${DEV}"
 	fdisk -BI ${DEV}
-	bsdlabel -Bwb ${BOOTSTRAPDIR}/boot/boot ${DEV}s1
+	bsdlabel -Bwb ${BASEDIR}/boot/boot ${DEV}s1
 	echo "8 partitions: \
-^a: `du -Ak ${UFSLIVEFILE} | cut -f 1`k * 4.2BSD \
+^a: `du -Ak ${IMAGEFILE} | cut -f 1`k * 4.2BSD \
 ^b: * * 4.2BSD \
 ^c: * * unused" | tr '^' '\n' >> ${WORKDIR}/bsdlabel
 	bsdlabel -R ${DEV}s1 ${WORKDIR}/bsdlabel
 	rm ${WORKDIR}/bsdlabel
-	newfs -EUL DragonBSD ${DEV}s1b
+	newfs -EUL ${SUPPNAME} ${DEV}s1b
 
-copy_ufs: ${UFSLIVEFILE}
+copy_ufs: ${IMAGEFILE}
 	@echo "Copying (Live) UFS image to device ${DEV}..."
-	dd if=${UFSLIVEFILE} of=${DEV}s1a bs=64k
-	tunefs -L DragonBSDBase ${DEV}s1a
+	dd if=${IMAGEFILE} of=${DEV}s1a bs=64k
+	tunefs -L ${BASENAME} ${DEV}s1a
