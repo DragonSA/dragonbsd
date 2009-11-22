@@ -105,10 +105,10 @@ creating the archive at $WORLDSRC:
 These scripts require the kernel to be archives (does not have the ability to
 compile directly from src [TODO]).  The following is a simple approach to
 creating the archive at $KERNELSRC:
-# mkdir /tmp/world
-# (cd /usr/src; make world distribution DESTDIR=/tmp/world)
-# tar -C /tmp/world -cjf $KERNELSRC .
-# (chflags -R 0 /tmp/world; rmdir -rf /tmp/world)
+# mkdir /tmp/kernel
+# (cd /usr/src; make world distribution DESTDIR=/tmp/kernel)
+# tar -C /tmp/kernel -cjf $KERNELSRC .
+# (chflags -R 0 /tmp/kernel; rmdir -rf /tmp/kernel)
 
 Note: The following modules need to be compiled (either into the kernel or as a
 module):

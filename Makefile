@@ -238,7 +238,7 @@ ${KERNEL_COPY_COOKIE}: ${PATCH_COOKIE}
 # Compress kernel objects
 ${COMPRESS_COOKIE}: ${KERNEL_COPY_COOKIE}
 	@echo "===> Compressing the kernel"
-	gzip -f9 ${BOOTSTRAPDIR}/boot/kernel/* ${BOOTSTRAPDIR}/boot/modules/*
+	gzip -f9 `find ${BOOTSTRAPDIR}/boot/kernel/ -type f` `find ${BOOTSTRAPDIR}/boot/modules/ -type f`
 
 	@touch ${COMPRESS_COOKIE}
 
