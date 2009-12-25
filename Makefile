@@ -14,7 +14,12 @@ KERNCONF?=	GENERIC
 TARGET?=	${UNAME_p}
 
 ## Working directories
+UNAME_p!=	uname -p
+. if ${TARGET} == ${UNAME_p}
+WORKDIR?=	${PWD}/work
+.else
 WORKDIR?=	${PWD}/work/${TARGET}
+.endif
 BASEDIR?=	${WORKDIR}/base
 BOOTSTRAPDIR?=	${WORKDIR}/bootstrap
 
@@ -23,7 +28,6 @@ DISTFILES?=	${PWD}/distfiles
 FILESRC?=	${PWD}/files
 PKGDIR?=	${DISTFILES}/packages
 
-UNAME_p!=	uname -p
 .if ${TARGET} == ${UNAME_p}
 
 .  if ${KERNCONF} == GENERIC
