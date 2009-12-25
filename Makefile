@@ -11,19 +11,40 @@
 ## Kernel/world build options
 SRCDIR?=	/usr/src
 KERNCONF?=	GENERIC
-TARGET?=	`uname -p`
+TARGET?=	${UNAME_p}
 
 ## Working directories
-WORKDIR?=	${PWD}/work
+WORKDIR?=	${PWD}/work/${TARGET}
 BASEDIR?=	${WORKDIR}/base
 BOOTSTRAPDIR?=	${WORKDIR}/bootstrap
 
 ## Source files
 DISTFILES?=	${PWD}/distfiles
-KERNELSRC?=	${DISTFILES}/kernel.tar.bz2
 FILESRC?=	${PWD}/files
-WORLDSRC?=	${DISTFILES}/world.tar.bz2
 PKGDIR?=	${DISTFILES}/packages
+
+UNAME_p!=	uname -p
+.if ${TARGET} == ${UNAME_p}
+
+.  if ${KERNCONF} == GENERIC
+KERNELSRC?=	${DISTFILES}/kernel.tar.bz2
+.  else
+KERNELSRC?=	${DISTFILES}/kernel-${KERNCONF}.tar.bz2
+.  endif
+PKG_ENV_DIR?=	/home/pkg_env
+WORLDSRC?=	${DISTFILES}/world.tar.bz2
+
+.else
+
+.  if ${KERNCONF} == GENERIC
+KERNELSRC?=	${DISTFILES}/kernel-${TARGET}.tar.bz2
+.  else
+KERNELSRC?=	${DISTFILES}/kernel-${KERNCONF}-${TARGET}.tar.bz2
+.  endif
+PKG_ENV_DIR?=	/home/pkg_env_${TARGET}
+WORLDSRC?=	${DISTFILES}/world-${TARGET}.tar.bz2
+
+.endif
 
 PKGS?=
 PORTS?=
@@ -161,27 +182,28 @@ ${BOOTSTRAP_COOKIE}: ${BOOTSTRAPSCRIPT_COOKIE} ${COMPRESS_COOKIE}
 ${WORLDSRC}:
 	@echo "===> Building world from source..."
 	make -C ${SRCDIR} -j`sysctl -n hw.ncpu` buildworld TARGET=${TARGET}
-	WORLDDIR=`mktemp -d /tmp/world.XXXXXX` && \
-	make -C ${SRCDIR} installworld distribution DESTDIR=$$WORLDDIR TARGET=${TARGET} && \
-	tar -C $$WORLDDIR -cjf ${WORLDSRC} . && \
-	(rm -rf $$WORLDDIR || (chflags -R 0 $$WORLDDIR ; rm -rf $$WORLDDIR))
+	WORLDTMP=`mktemp -d /tmp/world.XXXXXX` && \
+	make -C ${SRCDIR} installworld distribution DESTDIR=$${WORLDTMP} TARGET=${TARGET} && \
+	tar -C $${WORLDTMP} -cjf ${WORLDSRC} . && \
+	(rm -rf $${WORLDTMP} || (chflags -R 0 $${WORLDTMP}; rm -rf $${WORLDTMP}))
+
 
 # Extract the world (aka `make installworld distribution`)
 # Compensate for x86 support in amd64 distributions
 ${WORLD_EXTRACT_COOKIE}: ${WORLDSRC} ${BASEDIR_COOKIE}
 	@echo "===> Extracting userland files..."
 	tar -C ${BASEDIR} -xf ${WORLDSRC}
-	-(cd ${BASEDIR}/libexec; ln -s ld-elf.so.1 ld-elf32.so.1)
+	-ln -s ld-elf.so.1 ${BASEDIR}/libexec/ld-elf32.so.1
 
 	@touch ${WORLD_EXTRACT_COOKIE}
 
 ${KERNELSRC}:
 	@echo "===> Building kernel from source..."
 	make -C ${SRCDIR} -j`sysctl -n hw.ncpu` kernel-toolchain buildkernel KERNCONF=${KERNCONF} TARGET=${TARGET}
-	KERNELDIR=`mktemp -d /tmp/kernel.XXXXXX` && \
-	make -C ${SRCDIR} installkernel DESTDIR=$$KERNELDIR KERNCONF=${KERNCONF} TARGET=${TARGET} && \
-	tar -C $$KERNELDIR -cjf ${KERNELSRC} . && \
-	(rm -rf $$KERNELDIR || (chflags -R 0 $$KERNELDIR ; rm -rf $$KERNELDIR))
+	KERNELTMP=`mktemp -d /tmp/kernel.XXXXXX` && \
+	make -C ${SRCDIR} installkernel DESTDIR=$${KERNELTMP} KERNCONF=${KERNCONF} TARGET=${TARGET} && \
+	tar -C $${KERNELTMP} -cjf ${KERNELSRC} . && \
+	(rm -rf $${KERNELTMP} || (chflags -R 0 $${KERNELTMP}; rm -rf $${KERNELTMP}))
 
 # Extract the kernel (aka `make installkernel`)
 ${KERNEL_EXTRACT_COOKIE}: ${KERNELSRC} ${BASEDIR_COOKIE}
@@ -261,7 +283,7 @@ ${KERNEL_COPY_COOKIE}: ${PATCH_COOKIE}
 # Compress kernel objects
 ${COMPRESS_COOKIE}: ${KERNEL_COPY_COOKIE}
 	@echo "===> Compressing the kernel"
-	#gzip -f9 `find ${BOOTSTRAPDIR}/boot/kernel/ -type f` `find ${BOOTSTRAPDIR}/boot/modules/ -type f`
+	gzip -f9 `find ${BOOTSTRAPDIR}/boot/kernel/ -type f` `find ${BOOTSTRAPDIR}/boot/modules/ -type f`
 
 	@touch ${COMPRESS_COOKIE}
 
