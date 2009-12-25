@@ -1,20 +1,22 @@
-0.0.3:
+0.3.0:
  - Add documentation:
    - User Guide
    - Development Guide
+ - Use vfs.root.mountfrom as a list (requires -current)
 
-0.0.2:
+0.2.0:
  - Add profiles
  - Add compilation support (src and ports)
  - Add cache for compiled
  - Add support for multi-layered compressed images
 
-0.0.1:
+0.1.0:
+ - rename to CruxBSD (smallest of the 88 constelations, a grouping of starts [Fireflies that, uh... got stuck up on that big bluish-black thing.])
  - Add OS version test
  - Add utils check
  - Abstract commands (i.e. make mv -> $MV)
  - Use install as far as possible
- - Integrate usbbt into dragonbsd
+ * Integrate usbbt into dragonbsd
  - Extend scripts and make more modular
  - Check devfs hack still required for unionfs?
  - tmpfs supports unionfs?
