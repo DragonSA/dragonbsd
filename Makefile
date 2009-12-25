@@ -9,8 +9,9 @@
 .endif
 
 ## Kernel/world build options
-TARGET?=	`uname -p`
+SRCDIR?=	/usr/src
 KERNCONF?=	GENERIC
+TARGET?=	`uname -p`
 
 ## Working directories
 WORKDIR?=	${PWD}/work
@@ -159,9 +160,9 @@ ${BOOTSTRAP_COOKIE}: ${BOOTSTRAPSCRIPT_COOKIE} ${COMPRESS_COOKIE}
 
 ${WORLDSRC}:
 	@echo "===> Building world from source..."
-	make -C /usr/src -j`sysctl -n hw.ncpu` buildworld TARGET=${TARGET}
+	make -C ${SRCDIR} -j`sysctl -n hw.ncpu` buildworld TARGET=${TARGET}
 	WORLDDIR=`mktemp -d /tmp/world.XXXXXX` && \
-	make -C /usr/src installworld distribution DESTDIR=$$WORLDDIR TARGET=${TARGET} && \
+	make -C ${SRCDIR} installworld distribution DESTDIR=$$WORLDDIR TARGET=${TARGET} && \
 	tar -C $$WORLDDIR -cjf ${WORLDSRC} . && \
 	(rm -rf $$WORLDDIR || (chflags -R 0 $$WORLDDIR ; rm -rf $$WORLDDIR))
 
@@ -176,9 +177,9 @@ ${WORLD_EXTRACT_COOKIE}: ${WORLDSRC} ${BASEDIR_COOKIE}
 
 ${KERNELSRC}:
 	@echo "===> Building kernel from source..."
-	make -C /usr/src -j`sysctl -n hw.ncpu` kernel-toolchain buildkernel KERNCONF=${KERNCONF} TARGET=${TARGET}
-	KERNELDIR=`mktemp -d /tmp/world.XXXXXX` && \
-	make -C /usr/src installkernel DESTDIR=$$KERNELDIR KERNCONF=${KERNCONF} TARGET=${TARGET} && \
+	make -C ${SRCDIR} -j`sysctl -n hw.ncpu` kernel-toolchain buildkernel KERNCONF=${KERNCONF} TARGET=${TARGET}
+	KERNELDIR=`mktemp -d /tmp/kernel.XXXXXX` && \
+	make -C ${SRCDIR} installkernel DESTDIR=$$KERNELDIR KERNCONF=${KERNCONF} TARGET=${TARGET} && \
 	tar -C $$KERNELDIR -cjf ${KERNELSRC} . && \
 	(rm -rf $$KERNELDIR || (chflags -R 0 $$KERNELDIR ; rm -rf $$KERNELDIR))
 
