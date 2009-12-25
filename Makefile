@@ -287,6 +287,7 @@ ${KERNEL_COPY_COOKIE}: ${PATCH_COOKIE}
 # Compress kernel objects
 ${COMPRESS_COOKIE}: ${KERNEL_COPY_COOKIE}
 	@echo "===> Compressing the kernel"
+	strip `find ${BOOTSTRAPDIR}/boot/kernel/ -type f` `find ${BOOTSTRAPDIR}/boot/modules/ -type f`
 	gzip -f9 `find ${BOOTSTRAPDIR}/boot/kernel/ -type f` `find ${BOOTSTRAPDIR}/boot/modules/ -type f`
 
 	@touch ${COMPRESS_COOKIE}
@@ -363,14 +364,13 @@ ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 	mount -t tmpfs tmpfs ${BASEDIR}/tmp
 	#mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
 	#mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/ports/packages
-	-(cd ${BASEDIR}/usr/ports/packages; ln -s . All)
 
 	for PORT in ${PORTS}; \
 	do \
 		if [ -d ${BASEDIR}/usr/ports/$${PORT} ]; \
 		then \
 			pkg=`chroot ${BASEDIR} make -C /usr/ports/$${PORT} package-name`; \
-			if [ ! -f "`echo ${BASEDIR}/usr/ports/packages/$${pkg}.t[bg]z`" ]; \
+			if [ ! -f "`echo ${BASEDIR}/usr/ports/packages/All/$${pkg}.t[bg]z`" ]; \
 			then \
 				echo "==> Building port: $${PORT}"; \
 				chroot ${BASEDIR} make -C /usr/ports/$${PORT} install package-recursive clean BATCH=yes DEPENDS_CLEAN=yes NOCLEANDEPENDS=yes || \
