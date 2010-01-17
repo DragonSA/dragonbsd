@@ -2,9 +2,9 @@
 
 .if defined(NAME)
 .	if defined(NAMECONF)
-.		${NAMECONF}
+.		include "${NAMECONF}"
 .	else
-.		${NAME}
+.		include	"${NAME}"
 .	endif
 .endif
 
@@ -26,9 +26,10 @@ BOOTSTRAPDIR?=	${WORKDIR}/bootstrap
 ## Source files
 DISTFILES?=	${PWD}/distfiles
 FILESRC?=	${PWD}/files
-PKGDIR?=	${DISTFILES}/packages
 
 .if ${TARGET} == ${UNAME_p}
+
+PKGDIR?=	${DISTFILES}/packages
 
 .  if ${KERNCONF} == GENERIC
 KERNELSRC?=	${DISTFILES}/kernel.tar.bz2
@@ -39,6 +40,8 @@ PKG_ENV_DIR?=	/home/pkg_env
 WORLDSRC?=	${DISTFILES}/world.tar.bz2
 
 .else
+
+PKGDIR?=	${DISTFILES}/packages-${TARGET}
 
 .  if ${KERNCONF} == GENERIC
 KERNELSRC?=	${DISTFILES}/kernel-${TARGET}.tar.bz2
@@ -330,15 +333,15 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 ^echo "Patching /etc/rc.conf" \
 ^if [ ! -f /base/etc/rc.conf ] \
 ^then \
-^  echo "mount_rw_root=\"NO\"" > /base/etc/rc.conf \
+^  echo "root_rw_mount=\"NO\"" > /base/etc/rc.conf \
 ^else \
 ^  case `cat /base/etc/rc.conf` in \
-^    *mount_rw_root*) \
+^    *root_rw_mount*) \
 ^      ;; \
 ^    *) \
 ^      echo >> /base/etc/rc.conf \
-^      echo "mount_rw_root=\"NO\"" >> /base/etc/rc.conf \
-^      \;\; \
+^      echo "root_rw_mount=\"NO\"" >> /base/etc/rc.conf \
+^      ;; \
 ^  esac \
 ^fi \
 ^\
@@ -358,11 +361,11 @@ ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
 	mount -t nullfs ${PKGDIR} ${BASEDIR}/mnt
 	for PKG in ${PKGS}; \
 	do \
-		pkgs=`cd ${BASEDIR}/mnt; echo $${PKG}*t[bg]z`; \
+		pkgs=`cd ${BASEDIR}/mnt/All; ls $${PKG}*t[bg]z 2> /dev/null || true`; \
 		if [ -n "$${pkgs}" ]; \
 		then \
 			echo "==> Installing packages: $${pkgs}"; \
-			chroot ${BASEDIR} sh -c "cd /mnt && pkg_add -F $${pkgs}" || \
+			chroot ${BASEDIR} sh -c "cd /mnt/All && pkg_add -F $${pkgs}" || \
 			  (umount ${BASEDIR}/dev ${BASEDIR}/mnt; false); \
 		else \
 			echo "==> No packages with name ${PKG}"; \
@@ -487,5 +490,5 @@ copy_ufs: ${IMAGEFILE}
 
 burn_iso: ${IMAGEFILE}
 	@echo "===> Burning ISO image to device ${DEV}..."
-	cdrecord blank=fast dev=${DEV} -data ${IMAGEFILE}
+	cdrecord blank=fast dev=${DEV} -eject -data ${IMAGEFILE}
 	#burncd -e -f ${DEV} -s max blank data ${IMAGEFILE} fixate
