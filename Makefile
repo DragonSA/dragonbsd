@@ -313,13 +313,6 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 ^PATH=/rescue \
 ^trap "@echo Recovery console: ; PATH=/rescue /rescue/csh -i ; exit" 1 2 3 6 15 \
 ^\
-^CD_DEV=$$(dmesg | sed -n -e "s|.* a\(cd[0-9]\+\) .*iso9660/DragonBSDMEMLive.*|\1|p" | sed "1 q") \
-^if [ -n "$$CD_DEV" ] \
-^then \
-^  echo "Ejecting CD-ROM..." \
-^  camcontrol eject $$CD_DEV \
-^fi \
-^\
 ^if [ -f /base.ufs.uzip ] \
 ^then \
 ^  echo "Mounting compressed base:" \
@@ -348,14 +341,25 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 ^then \
 ^  echo "root_rw_mount=\"NO\"" > /base/etc/rc.conf \
 ^else \
-^  case `cat /base/etc/rc.conf` in \
-^    *root_rw_mount*) \
+^  case $$(cat /base/etc/rc.conf) in \
+^    *root_rw_mount=*) \
 ^      ;; \
 ^    *) \
 ^      echo >> /base/etc/rc.conf \
 ^      echo "root_rw_mount=\"NO\"" >> /base/etc/rc.conf \
 ^      ;; \
 ^  esac \
+^fi \
+^\
+^CD_DEV=$$(dmesg | sed -n -e "s|.* a\(cd[0-9]\+\) .*iso9660/DragonBSDMEMLive.*|\1|p" | sed "1 q") \
+^if [ -n "$$CD_DEV" ] \
+^then \
+^  echo "Ejecting CD-ROM..." \
+^  if [ -f /base/boot/kernel/atapicam.ko -a -z "$$(kldstat -v | grep ata/atapicam)" ] \
+^  then \
+^    kldload /base/boot/kernel/atapicam.ko \
+^  fi \
+^  camcontrol eject $$CD_DEV \
 ^fi \
 ^\
 ^echo "Chroot to base..."' | tr '^' '\n' > ${BOOTSTRAPDIR}/chroot
