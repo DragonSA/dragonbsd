@@ -327,6 +327,21 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 ^\
 ^mount -t devfs devfs /base/dev \
 ^\
+^echo "Patching /etc/rc.conf" \
+^if [ ! -f /base/etc/rc.conf ] \
+^then \
+^  echo 'mount_rw_root="NO" > /base/etc/rc.conf \
+^else \
+^  case `cat /base/etc/rc.conf` in \
+^    *mount_rw_root*) \
+^      ;; \
+^    *) \
+^      echo >> /base/etc/rc.conf \
+^      echo 'mount_rw_root="NO" >> /base/etc/rc.conf \
+^      ;; \
+^  esac \
+^fi \
+^\
 ^echo "Chroot to base..."' | tr '^' '\n' > ${BOOTSTRAPDIR}/chroot
 	chmod a+x ${BOOTSTRAPDIR}/chroot
 
@@ -398,12 +413,18 @@ ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 ${ISOFILE}: ${BASE_COOKIE}
 	@echo "===> Creating ISO image"
 	cp -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
+	cp -p ${BASEDIR}/etc/rc.conf ${WORKDIR}/
 	echo >> ${BASEDIR}/boot/loader.conf
 	echo "vfs.root.mountfrom=\"cd9660:/dev/iso9660/DragonBSD\"" >> ${BASEDIR}/boot/loader.conf
+	if [ -z "`grep root_rw_mount=`" ]; then \
+		echo >> ${BASEDIR}/etc/rc.conf; \
+		echo 'root_rw_mount="NO"' >> ${BASEDIR}/etc/rc.conf; \
+	fi
 
 	mkisofs ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSD -o ${ISOFILE} ${BASEDIR} \
-          || (mv ${WORKDIR}/loader.conf ${BASEDIR}/boot/; false)
+          || (mv ${WORKDIR}/rc.conf ${BASEDIR}/etc/; mv ${WORKDIR}/loader.conf ${BASEDIR}/boot/; false)
 
+	mv ${WORKDIR}/rc.conf ${BASEDIR}/etc/
 	mv ${WORKDIR}/loader.conf ${BASEDIR}/boot/
 
 # Create an ISO image with editable filesystem (live)
