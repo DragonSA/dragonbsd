@@ -2,12 +2,13 @@
  - Add documentation:
    - User Guide
    - Development Guide
- - Use vfs.root.mountfrom as a list (requires -current)
+ ? Use vfs.root.mountfrom as a list (requires -current)
+ - Correctly get device to eject mem based CD
 
 0.2.0:
- - Add profiles
- - Add compilation support (src and ports)
- - Add cache for compiled
+ * Add profiles
+ * Add compilation support (src and ports)
+ * Add cache for compiled
  - Add support for multi-layered compressed images
 
 0.1.0:
