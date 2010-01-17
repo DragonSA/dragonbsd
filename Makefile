@@ -330,15 +330,15 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 ^echo "Patching /etc/rc.conf" \
 ^if [ ! -f /base/etc/rc.conf ] \
 ^then \
-^  echo 'mount_rw_root="NO" > /base/etc/rc.conf \
+^  echo "mount_rw_root=\"NO\"" > /base/etc/rc.conf \
 ^else \
 ^  case `cat /base/etc/rc.conf` in \
 ^    *mount_rw_root*) \
 ^      ;; \
 ^    *) \
 ^      echo >> /base/etc/rc.conf \
-^      echo 'mount_rw_root="NO" >> /base/etc/rc.conf \
-^      ;; \
+^      echo "mount_rw_root=\"NO\"" >> /base/etc/rc.conf \
+^      \;\; \
 ^  esac \
 ^fi \
 ^\
