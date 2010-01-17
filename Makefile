@@ -1,12 +1,10 @@
 # USER DEFINABLE VARIABLES
 
-.if defined(NAME)
-.	if defined(NAMECONF)
-.		include "${NAMECONF}"
-.	else
-.		include	"${NAME}"
-.	endif
+.if defined(CONFIG)
+.	include	"${CONFIG}"
 .endif
+
+MDMFS_SIZE?=	32m
 
 ## Kernel/world build options
 SRCDIR?=	/usr/src
@@ -322,7 +320,7 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 ^  mount /dev/ufs/DragonBSD /overlay \
 ^else \
 ^  echo "Allocating temporary filesystem (32m):" \
-^  mdmfs -s 32m md /overlay \
+^  mdmfs -s ${MDMFS_SIZE} md /overlay \
 ^  \
 ^  echo "Overlaying temporary filesystem:" \
 ^fi \
