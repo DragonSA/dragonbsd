@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. common.shlib
+. `dirname $0`/common.shlib
 
 find ${BASEDIR}/usr/lib ! -type d -name '*.a' -delete
 find ${BASEDIR}/usr/local/lib ! -type d -name '*.a' -or -name '*.la'  -delete

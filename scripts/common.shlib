@@ -4,8 +4,9 @@ set -e
 
 [ -n "${BASEDIR}" ]
 
-if [ -n "${CONFIG}" ]
-then
-  . ${CONFIG}
-  HAVE_CONFIG="yes"
-fi 
+# TODO:...
+# if [ -n "${CONFIG}" ]
+# then
+#   . ${CONFIG}
+#   HAVE_CONFIG="yes"
+# fi 

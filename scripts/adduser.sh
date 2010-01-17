@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. common.shlib
+. `dirname $0`/common.shlib
 
 USER=${USER:-DragonBSD}
 
