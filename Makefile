@@ -312,6 +312,13 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 ^PATH=/rescue \
 ^trap "@echo Recovery console: ; PATH=/rescue /rescue/csh -i ; exit" 1 2 3 6 15 \
 ^\
+^CD_DEV=$$(dmesg | sed -n -e "s|.* a\(cd[0-9]\+\) .*iso9660/DragonBSDMEMLive.*|\1|p" | sed "1 q") \
+^if [ -n "$$CD_DEV" ] \
+^then \
+^  echo "Ejecting CD-ROM..." \
+^  camcontrol eject $$CD_DEV \
+^fi \
+^\
 ^if [ -f /base.ufs.uzip ] \
 ^then \
 ^  echo "Mounting compressed base:" \
