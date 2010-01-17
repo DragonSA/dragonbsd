@@ -1,5 +1,6 @@
 #!/bin/sh
 
-rm -rf /var/db/pkg
-mkdir /var/db/pkg
+. common.shlib
 
+rm -rf ${BASEDIR}/var/db/pkg
+mkdir ${BASEDIR}/var/db/pkg

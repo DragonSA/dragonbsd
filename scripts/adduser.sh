@@ -1,6 +1,8 @@
 #!/bin/sh
 
-echo "DragonBSD::::::DragonBSD LiveCD User::csh:" | adduser -f - -w none
-pw user mod DragonBSD -G operator,wheel
-echo -n "DragonBSD" | pw user mod DragonBSD -h 0
+. common.shlib
 
+USER=${USER:-DragonBSD}
+
+pw -V ${BASEDIR}/etc user add ${USER} -c "${USER} LiveSYS User" -G operator,wheel -s tcsh -w yes
+pw -V ${BASEDIR}/etc user mod ${USER} -m

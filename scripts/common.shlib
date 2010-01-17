@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+[ -n "${BASEDIR}" ]
+
+if [ -n "${CONFIG}" ]
+then
+  . ${CONFIG}
+  HAVE_CONFIG="yes"
+fi 

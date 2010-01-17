@@ -1,3 +1,5 @@
 #!/bin/sh
 
-find /boot ! -type d -name '*.symbols' -delete
+. common.shlib
+
+find ${BASEDIR}/boot ! -type d -name '*.symbols' -delete
