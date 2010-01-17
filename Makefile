@@ -324,15 +324,17 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 ^\
 ^if [ -w /dev/ufs/DragonBSDUFS ] \
 ^then \
-^  echo "Overlaying filesystem:" \
+^  echo -n "Overlaying filesystem:" \
 ^  mount /dev/ufs/DragonBSDUFS /overlay \
 ^else \
-^  echo "Allocating temporary filesystem (32m):" \
+^  echo -n "Allocating temporary filesystem (${MDMFS_SIZE}):" \
 ^  mdmfs -s ${MDMFS_SIZE} md /overlay \
+^  echo . \
 ^  \
-^  echo "Overlaying temporary filesystem:" \
+^  echo -n "Overlaying temporary filesystem:" \
 ^fi \
 ^mount -t unionfs -o noatime -o copymode=transparent /overlay /base \
+^echo . \
 ^\
 ^mount -t devfs devfs /base/dev \
 ^\
