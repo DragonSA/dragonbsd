@@ -70,6 +70,7 @@ ISOMEMLIVEFILE?=		${WORKDIR}/dragonbsd-mem-live.iso
 ISOLIVEFILE?=			${WORKDIR}/dragonbsd-live.iso
 UFSFILE?=			${WORKDIR}/dragonbsd.ufs
 UFSLIVEFILE?=			${WORKDIR}/dragonbsd-live.ufs
+UFSMEMLIVEFILE?=		${WORKDIR}/dragonbsd-mem-live.ufs
 
 ## Sundry
 MKISOFLAGS=	-quiet -sysid FREEBSD -rock -untranslated-filenames -max-iso9660-filenames -iso-level 4
@@ -392,6 +393,8 @@ ${LOADERBOOTSTRAP_COOKIE}: ${BOOTSTRAP_COOKIE}
 
 	@touch ${LOADERBOOTSTRAP_COOKIE}
 
+.ORDER: ${ISOMEMLIVEFILE} ${UFSMEMLIVEFILE}
+
 ${ISOMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	@echo "===> Creating Memory based Live ISO image"
 	cp -p ${LOADERBOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
@@ -405,6 +408,24 @@ ${ISOMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 
 	mkisofs ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSDMEMLive -o ${ISOMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
 	  || (mv ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; rm ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; false)
+
+	mv ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
+	rm ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
+
+${UFSMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
+	@echo "===> Creating Memory based Live UFS image"
+	cp -p ${LOADERBOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
+	echo >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	echo "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	echo "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	echo "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	echo "vfs.root.mountfrom=\"ufs:/dev/ufs/DragonBSDMEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+
+	ln ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
+
+	makefs ${UFSMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
+	  || (mv ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; rm ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; false)
+	tunefs -L DragonBSDMEMLive ${UFSLIVEFILE}
 
 	mv ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
 	rm ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
