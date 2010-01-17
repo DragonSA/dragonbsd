@@ -5,6 +5,7 @@
 .endif
 
 MDMFS_SIZE?=	32m
+SCRIPTS?=	
 
 ## Kernel/world build options
 SRCDIR?=	/usr/src
@@ -24,6 +25,8 @@ BOOTSTRAPDIR?=	${WORKDIR}/bootstrap
 ## Source files
 DISTFILES?=	${PWD}/distfiles
 FILESRC?=	${PWD}/files
+SCRIPTSDIR?=	${_MASTERSCRIPTSDIR}
+_MASTERSCRIPTSDIR= ${.CURDIR}/scripts
 
 .if ${TARGET} == ${UNAME_p}
 
@@ -84,6 +87,7 @@ LOADER_COOKIE=		${WORKDIR}/.loader-done
 PACKAGE_COOKIE=		${WORKDIR}/.package-done
 PATCH_COOKIE=		${WORKDIR}/.patch-done
 PORTS_COOKIE=		${WORKDIR}/.ports-done
+SCRIPTS_COOKIE=		${WORKDIR}/.scripts-done
 WORKDIR_COOKIE=		${WORKDIR}/.workdir-done
 WORLD_EXTRACT_COOKIE=	${WORKDIR}/.world_extract-done
 
@@ -184,7 +188,7 @@ ${BASEDIR_COOKIE}: ${WORKDIR_COOKIE}
 
 	@touch ${BASEDIR_COOKIE}
 
-${BASE_COOKIE}: ${CONFIG_COPY_COOKIE} ${PORTS_COOKIE}
+${BASE_COOKIE}: ${CONFIG_COPY_COOKIE} ${PORTS_COOKIE} ${SCRIPTS_COOKIE}
 	@touch ${BASE_COOKIE}
 
 ${BOOTSTRAP_COOKIE}: ${BOOTSTRAPSCRIPT_COOKIE} ${COMPRESS_COOKIE}
@@ -371,9 +375,9 @@ ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
 	done
 	umount ${BASEDIR}/dev ${BASEDIR}/mnt
 
-	touch ${PACKAGE_COOKIE}
+	@touch ${PACKAGE_COOKIE}
 
-MOUNTDIRS=${BASEDIR}/tmp ${BASEDIR}/dev ${BASEDIR}/usr/freebsd ${BASEDIR}/usr/ports #${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd/packages
+_MOUNTDIRS=${BASEDIR}/tmp ${BASEDIR}/dev ${BASEDIR}/usr/freebsd ${BASEDIR}/usr/ports #${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd/packages
 
 ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 	@echo "===> Installing ports..."
@@ -395,20 +399,35 @@ ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 			then \
 				echo "==> Building port: $${PORT}"; \
 				chroot ${BASEDIR} make -C /usr/ports/$${PORT} install package-recursive clean BATCH=yes DEPENDS_CLEAN=yes NOCLEANDEPENDS=yes || \
-				  (umount ${MOUNTDIRS}; false); \
+				  (umount ${_MOUNTDIRS}; false); \
 			else \
 				echo "==> Installing port: $${PORT} ($${pkg})"; \
 				chroot ${BASEDIR} sh -c "cd /usr/ports/packages/All && pkg_add -F $${pkg}.t[bg]z" || \
-				  (umount ${MOUNTDIRS}; false); \
+				  (umount ${_MOUNTDIRS}; false); \
 			fi; \
 		else \
 			echo "==> No port with name $${PORT}"; \
 		fi; \
 	done
 
-	umount ${MOUNTDIRS}
+	umount ${_MOUNTDIRS}
 
-	touch ${PORTS_COOKIE}
+	@touch ${PORTS_COOKIE}
+
+${SCRIPTS_COOKIE}: ${PORTS_COOKIE}
+	@echo "===> Running customising scripts..."
+.for script in ${SCRIPTS}
+.if ${SCRIPTSDIR} != ${_MASTERSCRIPTSDIR}
+	if [ -x ${SCRIPTSDIR}/${script} ]; then \
+		env BASEDIR=${BASEDIR} CONFIG=${CONFIG} ${SCRIPTSDIR}/${script}; \
+	else \
+		env BASEDIR=${BASEDIR} CONFIG=${CONFIG} ${_MASTERSCRIPTSDIR}/${script}; \
+	fi
+.else
+	env BASEDIR=${BASEDIR} CONFIG=${CONFIG} ${SCRIPTSDIR}/${script}
+.endif
+.endfor
+	@touch ${SCRIPTS_COOKIE}
 
 # Create an ISO image (from the base image)
 ${ISOFILE}: ${BASE_COOKIE}
