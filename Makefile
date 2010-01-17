@@ -149,6 +149,12 @@ ufs: ${UFSFILE}
 ufs-live: ${UFSLIVEFILE}
 	@echo "=== Created live UFS image: ${UFSLIVEFILE} ==="
 
+cd-live:
+	@[ -n "${DEV}" ] || (echo "Please specify a device using make cd-live DEV=..."; echo "Possible devices:"; cdrecord -scanbus; false)
+	#@[ -c ${DEV} ] || (echo "Please specify a valid character device"; false)
+	@echo "===> Writing ISO image to ${DEV}"
+	make burn_iso DEV=${DEV} IMAGEFILE=${ISOLIVEFILE}
+
 usb:
 	@[ -n "${DEV}" ] || (echo "Please specify a device using make ufs DEV=..."; false)
 	@[ -c ${DEV} ] || (echo "Please specify a valid character device"; false)
@@ -157,7 +163,7 @@ usb:
 
 
 usb-live:
-	@[ -n "${DEV}" ] || (echo "Please specify a device using make ufs DEV=..."; false)
+	@[ -n "${DEV}" ] || (echo "Please specify a device using make ufs-live DEV=..."; false)
 	@[ -c ${DEV} ] || (echo "Please specify a valid character device"; false)
 	@echo "===> Writing live UFS image to ${DEV}"
 	make partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSLIVEFILE} BASENAME=DragonBSDBase SUPPNAME=DragonBSD
@@ -287,7 +293,6 @@ ${KERNEL_COPY_COOKIE}: ${PATCH_COOKIE}
 # Compress kernel objects
 ${COMPRESS_COOKIE}: ${KERNEL_COPY_COOKIE}
 	@echo "===> Compressing the kernel"
-	strip `find ${BOOTSTRAPDIR}/boot/kernel/ -type f` `find ${BOOTSTRAPDIR}/boot/modules/ -type f`
 	gzip -f9 `find ${BOOTSTRAPDIR}/boot/kernel/ -type f` `find ${BOOTSTRAPDIR}/boot/modules/ -type f`
 
 	@touch ${COMPRESS_COOKIE}
@@ -455,6 +460,11 @@ partition_usb: ${IMAGEFILE}
 	newfs -EUL ${SUPPNAME} ${DEV}s1b
 
 copy_ufs: ${IMAGEFILE}
-	@echo "===> Copying (Live) UFS image to device ${DEV}..."
+	@echo "===> Copying UFS image to device ${DEV}..."
 	dd if=${IMAGEFILE} of=${DEV}s1a bs=64k
 	tunefs -L ${BASENAME} ${DEV}s1a
+
+burn_iso: ${IMAGEFILE}
+	@echo "===> Burning ISO image to device ${DEV}..."
+	cdrecord blank=fast dev=${DEV} -data ${IMAGEFILE}
+	#burncd -e -f ${DEV} -s max blank data ${IMAGEFILE} fixate
