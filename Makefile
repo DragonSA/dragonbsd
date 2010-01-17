@@ -168,14 +168,14 @@ usb:
 	@[ -n "${DEV}" ] || (echo "Please specify a device using make ufs DEV=..."; false)
 	@[ -c ${DEV} ] || (echo "Please specify a valid character device"; false)
 	@echo "===> Writing UFS image to ${DEV}"
-	make partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSFILE} SUPPNAME=DragonBSD2
+	make partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSFILE}
 
 
 usb-live:
 	@[ -n "${DEV}" ] || (echo "Please specify a device using make ufs-live DEV=..."; false)
 	@[ -c ${DEV} ] || (echo "Please specify a valid character device"; false)
 	@echo "===> Writing live UFS image to ${DEV}"
-	make partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSLIVEFILE} SUPPNAME=DragonBSD
+	make partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSLIVEFILE}
 
 ${WORKDIR_COOKIE}:
 	@echo "===> Making working directory"
@@ -322,10 +322,10 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 ^  mount -o ro /dev/$$(mdconfig -a -t vnode -o readonly -f /base.ufs) /base \
 ^fi \
 ^\
-^if [ -w /dev/ufs/DragonBSD ] \
+^if [ -w /dev/ufs/DragonBSDUFS ] \
 ^then \
 ^  echo "Overlaying filesystem:" \
-^  mount /dev/ufs/DragonBSD /overlay \
+^  mount /dev/ufs/DragonBSDUFS /overlay \
 ^else \
 ^  echo "Allocating temporary filesystem (32m):" \
 ^  mdmfs -s ${MDMFS_SIZE} md /overlay \
@@ -579,7 +579,7 @@ partition_usb: ${IMAGEFILE}
 ^c: * * unused" | tr '^' '\n' >> ${WORKDIR}/bsdlabel
 	bsdlabel -R ${DEV}s1 ${WORKDIR}/bsdlabel
 	rm ${WORKDIR}/bsdlabel
-	newfs -EUL ${SUPPNAME} ${DEV}s1b
+	newfs -EUL DragonBSDUFS ${DEV}s1b
 
 copy_ufs: ${IMAGEFILE}
 	@echo "===> Copying UFS image to device ${DEV}..."
