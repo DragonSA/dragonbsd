@@ -4,6 +4,7 @@
    - Development Guide
  ? Use vfs.root.mountfrom as a list (requires -current)
  - Correctly get device to eject mem based CD
+ - auto erase RW cdrom
 
 0.2.0:
  * Add profiles
