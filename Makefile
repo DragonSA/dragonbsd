@@ -467,7 +467,7 @@ ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 	mount -t nullfs /usr/freebsd ${BASEDIR}/usr/freebsd
 	mount -t devfs devfs ${BASEDIR}/dev
 	mount -t tmpfs tmpfs ${BASEDIR}/tmp
-	#mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
+	mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
 	#mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/ports/packages
 
 	for PORT in ${PORTS}; \
@@ -475,9 +475,9 @@ ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 		if [ -d ${BASEDIR}/usr/ports/$${PORT} ]; \
 		then \
 			pkg=`chroot ${BASEDIR} make -C /usr/ports/$${PORT} package-name`; \
-			if [ ! -f "`echo ${BASEDIR}/usr/ports/packages/All/$${pkg}.t[bg]z`" ]; \
+			if [ ! -f "`ls ${BASEDIR}/usr/ports/packages/All/$${pkg}.t[bg]z 2> /dev/null`" ]; \
 			then \
-				echo "==> Building port: $${PORT}"; \
+				echo "==> Building port: $${PORT} ($${pkg})"; \
 				chroot ${BASEDIR} make -C /usr/ports/$${PORT} install package-recursive clean BATCH=yes DEPENDS_CLEAN=yes NOCLEANDEPENDS=yes || \
 				  (umount ${_MOUNTDIRS}; false); \
 			else \
