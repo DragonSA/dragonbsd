@@ -313,6 +313,8 @@ ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 ^PATH=/rescue \
 ^trap "@echo Recovery console: ; PATH=/rescue /rescue/csh -i ; exit" 1 2 3 6 15 \
 ^\
+set -e^\
+^\
 ^if [ -f /base.ufs.uzip ] \
 ^then \
 ^  echo "Mounting compressed base:" \
@@ -450,7 +452,7 @@ ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
 			chroot ${BASEDIR} sh -c "cd /mnt/All && pkg_add -F $${pkgs}" || \
 			  (umount ${BASEDIR}/dev ${BASEDIR}/mnt; false); \
 		else \
-			echo "==> No packages with name ${PKG}"; \
+			echo "==> No packages with name $${PKG}"; \
 		fi; \
 	done
 	umount ${BASEDIR}/dev ${BASEDIR}/mnt
@@ -467,7 +469,7 @@ ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 	mount -t nullfs /usr/freebsd ${BASEDIR}/usr/freebsd
 	mount -t devfs devfs ${BASEDIR}/dev
 	mount -t tmpfs tmpfs ${BASEDIR}/tmp
-	mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
+	#mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
 	#mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/ports/packages
 
 	for PORT in ${PORTS}; \
@@ -589,5 +591,9 @@ copy_ufs: ${IMAGEFILE}
 
 burn_iso: ${IMAGEFILE}
 	@echo "===> Burning ISO image to device ${DEV}..."
-	cdrecord blank=fast dev=${DEV} -eject -data ${IMAGEFILE}
+.if defined(BLANK)
+	cdrecord blank=${BLANK} dev=${DEV} -eject -data ${IMAGEFILE}
+.else
+	cdrecord dev=${DEV} -overburn -eject -data ${IMAGEFILE}
+.endif
 	#burncd -e -f ${DEV} -s max blank data ${IMAGEFILE} fixate
