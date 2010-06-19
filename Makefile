@@ -4,6 +4,8 @@
 .	include	"${CONFIG}"
 .endif
 
+.include "bsd.commands.mk"
+
 MDMFS_SIZE?=	32m
 SCRIPTS?=	
 
@@ -13,7 +15,7 @@ KERNCONF?=	GENERIC
 TARGET?=	${UNAME_p}
 
 ## Working directories
-UNAME_p!=	uname -p
+UNAME_p!=	${UNAME} -p
 . if ${TARGET} == ${UNAME_p}
 WORKDIR?=	${PWD}/work
 .else
@@ -103,213 +105,213 @@ WORLD_EXTRACT_COOKIE=	${WORKDIR}/.world_extract-done
 .PHONY: usage help all live clean iso iso-live ufs ufs-live usb usb-live partition_usb copy_ufs
 
 usage:
-	@echo "usage: make [targets]"
+	@${ECHO} "usage: make [targets]"
 
 help: usage
-	@echo
-	@echo "Creates an image file containing a full FreeBSD distribution.  The image format"
-	@echo "can be specified ('ISO' for CD/DVD or 'UFS' for mass storage).  The type of"
-	@echo "bootable system can also be specified ('normal' or 'live')."
-	@echo
-	@echo "Multiple targets
-	@echo
-	@echo "The following targets are available:"
-	@echo "Types:"
-	@echo "	iso		Creates a ISO image"
-	@echo "	iso-live	Creates a live ISO image"
-	@echo "	ufs		Creates a UFS image"
-	@echo "	ufs-live	Creates a live UFS image"
-	@echo
-	@echo "Composites:"
-	@echo "	all		Creates all the types above"
-	@echo "	live		Creates all the live types above"
-	@echo
-	@echo "Utilities:"
-	@echo "	clean		Remove all working files
-	@echo "	usb		Writes a UFS image to a (USB) mass storage device*"
-	@echo "	usb-live	Writes a live UFS image to a (USB) mass storage device*"
-	@echo "*the device to write to must be specified using DEV (eg make usb DEV=/dev/da0)"
-	@echo
-	@echo "Help:"
-	@echo "	help		Displays this help message"
-	@echo "	help-[type]	Displays discription for [type] image (from above) [TODO]"
-	@echo "	help-config	Displays information for customising a system image [TODO]"
-	@echo
-	@echo "???For further help see the manual pages (eg man dragonbsd) [TODO]"
+	@${ECHO}
+	@${ECHO} "Creates an image file containing a full FreeBSD distribution.  The image format"
+	@${ECHO} "can be specified ('ISO' for CD/DVD or 'UFS' for mass storage).  The type of"
+	@${ECHO} "bootable system can also be specified ('normal' or 'live')."
+	@${ECHO}
+	@${ECHO} "Multiple targets
+	@${ECHO}
+	@${ECHO} "The following targets are available:"
+	@${ECHO} "Types:"
+	@${ECHO} "	iso		Creates a ISO image"
+	@${ECHO} "	iso-live	Creates a live ISO image"
+	@${ECHO} "	ufs		Creates a UFS image"
+	@${ECHO} "	ufs-live	Creates a live UFS image"
+	@${ECHO}
+	@${ECHO} "Composites:"
+	@${ECHO} "	all		Creates all the types above"
+	@${ECHO} "	live		Creates all the live types above"
+	@${ECHO}
+	@${ECHO} "Utilities:"
+	@${ECHO} "	clean		Remove all working files
+	@${ECHO} "	usb		Writes a UFS image to a (USB) mass storage device*"
+	@${ECHO} "	usb-live	Writes a live UFS image to a (USB) mass storage device*"
+	@${ECHO} "*the device to write to must be specified using DEV (eg make usb DEV=/dev/da0)"
+	@${ECHO}
+	@${ECHO} "Help:"
+	@${ECHO} "	help		Displays this help message"
+	@${ECHO} "	help-[type]	Displays discription for [type] image (from above) [TODO]"
+	@${ECHO} "	help-config	Displays information for customising a system image [TODO]"
+	@${ECHO}
+	@${ECHO} "???For further help see the manual pages (eg man dragonbsd) [TODO]"
 
 all: iso iso-live ufs ufs-live
 
 live: iso-live ufs-live
 
 clean:
-	@echo "===> Cleaning working area..."
-	[ -z "`mount | grep ${BASEDIR}`" ] || umount `mount | grep ${BASEDIR} | cut -f 3 -d ' ' | sort -r`
-	-rm -rf ${WORKDIR} 2> /dev/null || (chflags -R 0 ${WORKDIR}; rm -rf ${WORKDIR})
+	@${ECHO} "===> Cleaning working area..."
+	[ -z "`${MOUNT} | ${GREP} ${BASEDIR}`" ] || ${UMOUNT} `${MOUNT} | ${GREP} ${BASEDIR} | ${CUT} -f 3 -d ' ' | ${SORT} -r`
+	-${RM} -rf ${WORKDIR} 2> /dev/null || (${CHFLAGS} -R 0 ${WORKDIR}; ${RM} -rf ${WORKDIR})
 
 iso: ${ISOFILE}
-	@echo "=== Created ISO image: ${ISOFILE} ==="
+	@${ECHO} "=== Created ISO image: ${ISOFILE} ==="
 
 iso-live: ${ISOLIVEFILE}
-	@echo "=== Created live ISO image: ${ISOLIVEFILE} ==="
+	@${ECHO} "=== Created live ISO image: ${ISOLIVEFILE} ==="
 
 ufs: ${UFSFILE}
-	@echo "=== Created UFS image: ${UFSFILE} ==="
+	@${ECHO} "=== Created UFS image: ${UFSFILE} ==="
 
 ufs-live: ${UFSLIVEFILE}
-	@echo "=== Created live UFS image: ${UFSLIVEFILE} ==="
+	@${ECHO} "=== Created live UFS image: ${UFSLIVEFILE} ==="
 
 cd-live:
-	@[ -n "${DEV}" ] || (echo "Please specify a device using make cd-live DEV=..."; echo "Possible devices:"; cdrecord -scanbus; false)
-	#@[ -c ${DEV} ] || (echo "Please specify a valid character device"; false)
-	@echo "===> Writing ISO image to ${DEV}"
-	make burn_iso DEV=${DEV} IMAGEFILE=${ISOLIVEFILE}
+	#@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make cd-live DEV=..."; ${ECHO} "Possible devices:"; ${CDRECORD} -scanbus; ${FALSE})
+	@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
+	@${ECHO} "===> Writing ISO image to ${DEV}"
+	${MAKE} burn_iso DEV=${DEV} IMAGEFILE=${ISOLIVEFILE}
 
 usb:
-	@[ -n "${DEV}" ] || (echo "Please specify a device using make ufs DEV=..."; false)
-	@[ -c ${DEV} ] || (echo "Please specify a valid character device"; false)
-	@echo "===> Writing UFS image to ${DEV}"
-	make partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSFILE}
+	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make ufs DEV=..."; ${FALSE})
+	@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
+	@${ECHO} "===> Writing UFS image to ${DEV}"
+	${MAKE} partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSFILE}
 
 
 usb-live:
-	@[ -n "${DEV}" ] || (echo "Please specify a device using make ufs-live DEV=..."; false)
-	@[ -c ${DEV} ] || (echo "Please specify a valid character device"; false)
-	@echo "===> Writing live UFS image to ${DEV}"
-	make partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSLIVEFILE}
+	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make ufs-live DEV=..."; ${FALSE})
+	@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
+	@${ECHO} "===> Writing live UFS image to ${DEV}"
+	${MAKE} partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSLIVEFILE}
 
 ${WORKDIR_COOKIE}:
-	@echo "===> Making working directory"
-	mkdir -p ${WORKDIR}
-	chown root:wheel ${WORKDIR}
+	@${ECHO} "===> Making working directory"
+	${MKDIR} -p ${WORKDIR}
+	${CHOWN} root:wheel ${WORKDIR}
 
-	mkdir -p ${DISTFILES} ${PKGDIR}
+	${MKDIR} -p ${DISTFILES} ${PKGDIR}
 
-	@touch ${WORKDIR_COOKIE}
+	@${TOUCH} ${WORKDIR_COOKIE}
 
 ${BASEDIR_COOKIE}: ${WORKDIR_COOKIE}
-	@echo "===> Making base directory"
-	mkdir -p ${BASEDIR}
+	@${ECHO} "===> Making base directory"
+	${MKDIR} -p ${BASEDIR}
 
-	@touch ${BASEDIR_COOKIE}
+	@${TOUCH} ${BASEDIR_COOKIE}
 
 ${BASE_COOKIE}: ${CONFIG_COPY_COOKIE} ${PORTS_COOKIE} ${SCRIPTS_COOKIE}
-	@touch ${BASE_COOKIE}
+	@${TOUCH} ${BASE_COOKIE}
 
 ${BOOTSTRAP_COOKIE}: ${BOOTSTRAPSCRIPT_COOKIE} ${COMPRESS_COOKIE}
-	@touch ${BOOTSTRAP_COOKIE}
+	@${TOUCH} ${BOOTSTRAP_COOKIE}
 
 ${WORLDSRC}:
-	@echo "===> Building world from source..."
-	make -C ${SRCDIR} -j`sysctl -n hw.ncpu` buildworld TARGET=${TARGET}
+	@${ECHO} "===> Building world from source..."
+	${MAKE} -C ${SRCDIR} -j`sysctl -n hw.n${CP}u` buildworld TARGET=${TARGET}
 	WORLDTMP=`mktemp -d /tmp/world.XXXXXX` && \
-	make -C ${SRCDIR} installworld distribution DESTDIR=$${WORLDTMP} TARGET=${TARGET} && \
-	tar -C $${WORLDTMP} -cJf ${WORLDSRC} . && \
-	(rm -rf $${WORLDTMP} || (chflags -R 0 $${WORLDTMP}; rm -rf $${WORLDTMP}))
+	${MAKE} -C ${SRCDIR} installworld distribution DESTDIR=$${WORLDTMP} TARGET=${TARGET} && \
+	${TAR} -C $${WORLDTMP} -cJf ${WORLDSRC} . && \
+	(${RM} -rf $${WORLDTMP} || (${CHFLAGS} -R 0 $${WORLDTMP}; ${RM} -rf $${WORLDTMP}))
 
 
 # Extract the world (aka `make installworld distribution`)
 # Compensate for x86 support in amd64 distributions
 ${WORLD_EXTRACT_COOKIE}: ${WORLDSRC} ${BASEDIR_COOKIE}
-	@echo "===> Extracting userland files..."
-	tar -C ${BASEDIR} -xf ${WORLDSRC}
-	-ln -s ld-elf.so.1 ${BASEDIR}/libexec/ld-elf32.so.1
+	@${ECHO} "===> Extracting userland files..."
+	${TAR} -C ${BASEDIR} -xf ${WORLDSRC}
+	-${LN} -s ld-elf.so.1 ${BASEDIR}/libexec/ld-elf32.so.1
 
-	@touch ${WORLD_EXTRACT_COOKIE}
+	@${TOUCH} ${WORLD_EXTRACT_COOKIE}
 
 ${KERNELSRC}:
-	@echo "===> Building kernel from source..."
-	make -C ${SRCDIR} -j`sysctl -n hw.ncpu` kernel-toolchain buildkernel KERNCONF=${KERNCONF} TARGET=${TARGET}
+	@${ECHO} "===> Building kernel from source..."
+	${MAKE} -C ${SRCDIR} -j`sysctl -n hw.n${CP}u` kernel-toolchain buildkernel KERNCONF=${KERNCONF} TARGET=${TARGET}
 	KERNELTMP=`mktemp -d /tmp/kernel.XXXXXX` && \
-	make -C ${SRCDIR} installkernel DESTDIR=$${KERNELTMP} KERNCONF=${KERNCONF} TARGET=${TARGET} && \
-	tar -C $${KERNELTMP} -cJf ${KERNELSRC} . && \
-	(rm -rf $${KERNELTMP} || (chflags -R 0 $${KERNELTMP}; rm -rf $${KERNELTMP}))
+	${MAKE} -C ${SRCDIR} installkernel DESTDIR=$${KERNELTMP} KERNCONF=${KERNCONF} TARGET=${TARGET} && \
+	${TAR} -C $${KERNELTMP} -cJf ${KERNELSRC} . && \
+	(${RM} -rf $${KERNELTMP} || (${CHFLAGS} -R 0 $${KERNELTMP}; ${RM} -rf $${KERNELTMP}))
 
 # Extract the kernel (aka `make installkernel`)
 ${KERNEL_EXTRACT_COOKIE}: ${KERNELSRC} ${BASEDIR_COOKIE}
-	@echo "===> Extracting kernel files..."
-	tar -C ${BASEDIR} -xf ${KERNELSRC}
+	@${ECHO} "===> Extracting kernel files..."
+	${TAR} -C ${BASEDIR} -xf ${KERNELSRC}
 
-	@touch ${KERNEL_EXTRACT_COOKIE}
+	@${TOUCH} ${KERNEL_EXTRACT_COOKIE}
 
 # Copy across user files (configuration files and others)
 ${CONFIG_COPY_COOKIE}: ${WORLD_EXTRACT_COOKIE} ${KERNEL_EXTRACT_COOKIE}
-	@echo "===> Copying across user files..."
-	touch ${BASEDIR}/boot/loader.conf
-	tar -C ${FILESRC} -cf - . | tar -C ${BASEDIR} -xf -
+	@${ECHO} "===> Copying across user files..."
+	${TOUCH} ${BASEDIR}/boot/loader.conf
+	${TAR} -C ${FILESRC} -cf - . | ${TAR} -C ${BASEDIR} -xf -
 
-	@touch ${CONFIG_COPY_COOKIE}
+	@${TOUCH} ${CONFIG_COPY_COOKIE}
 
 # Prepare all directories required for bootstrapping
 ${BOOTSTRAPDIR_COOKIE}: ${CONFIG_COPY_COOKIE}
-	@echo "===> Creating directories for bootstrap"
-	mkdir -p ${BOOTSTRAPDIR}
-	(cd ${BOOTSTRAPDIR}; mkdir -p ${BOOTSTRAPDIRS} `cd ${BASEDIR}; find boot -type d -depth 1`)
+	@${ECHO} "===> Creating directories for bootstrap"
+	${MKDIR} -p ${BOOTSTRAPDIR}
+	(cd ${BOOTSTRAPDIR}; ${MKDIR} -p ${BOOTSTRAPDIRS} `cd ${BASEDIR}; ${FIND} boot -type d -depth 1`)
 
-	@touch ${BOOTSTRAPDIR_COOKIE}
+	@${TOUCH} ${BOOTSTRAPDIR_COOKIE}
 
 # Copy across all userland files required for bootstrapping
 ${FILES_COPY_COOKIE}: ${BOOTSTRAPDIR_COOKIE} ${CONFIG_COPY_COOKIE}
-	@echo "===> Copying userland files for bootstrap"
-	tar -C ${BASEDIR} -cf - rescue ${BOOTSTRAPFILES} | \
-		tar -C ${BOOTSTRAPDIR} -xf -
+	@${ECHO} "===> Copying userland files for bootstrap"
+	${TAR} -C ${BASEDIR} -cf - rescue ${BOOTSTRAPFILES} | \
+		${TAR} -C ${BOOTSTRAPDIR} -xf -
 
-	@touch ${FILES_COPY_COOKIE}
+	@${TOUCH} ${FILES_COPY_COOKIE}
 
 # Copy across all loader/kernel files required for bootstrapping
 ${LOADER_COOKIE}: ${FILES_COPY_COOKIE} ${BOOTSTRAPDIR_COOKIE}
-	@echo "===> Copying loader/kernel files for bootstrap"
+	@${ECHO} "===> Copying loader/kernel files for bootstrap"
 	(cd ${BASEDIR}; \
-	  tar -cf - `find boot -type f -depth 1`) | tar -C ${BOOTSTRAPDIR} -xf -
+	  ${TAR} -cf - `${FIND} boot -type f -depth 1`) | ${TAR} -C ${BOOTSTRAPDIR} -xf -
 
-	-(tar -C ${BASEDIR} -cf - boot/defaults | tar -C ${BOOTSTRAPDIR} -xf -) 2> /dev/null
-	-cp -fp ${BASEDIR}/usr/lib/kgzldr.o ${BOOTSTRAPDIR}/usr/lib 2> /dev/null
+	-(${TAR} -C ${BASEDIR} -cf - boot/defaults | ${TAR} -C ${BOOTSTRAPDIR} -xf -) 2> /dev/null
+	-${CP} -fp ${BASEDIR}/usr/lib/kgzldr.o ${BOOTSTRAPDIR}/usr/lib 2> /dev/null
 
-	@touch ${LOADER_COOKIE}
+	@${TOUCH} ${LOADER_COOKIE}
 
 # Patch the loader.conf file for bootstrapping
 ${PATCH_COOKIE}: ${LOADER_COOKIE}
-	@echo "===> Patching the loader.conf for bootstrap"
-	echo >> ${BOOTSTRAPDIR}/boot/loader.conf
+	@${ECHO} "===> Patching the loader.conf for bootstrap"
+	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
 
 	for module in ${BOOTSTRAPMODULES}; \
 	do \
-		if [ -z "`grep ^$${module}_load=\"[Yy][Ee][Ss]\".\* ${BOOTSTRAPDIR}/boot/loader.conf`" ]; \
+		if [ -z "`${GREP} ^$${module}_load=\"[Yy][Ee][Ss]\".\* ${BOOTSTRAPDIR}/boot/loader.conf`" ]; \
 		then \
-			echo "$${module}_load=\"YES\"" >> ${BOOTSTRAPDIR}/boot/loader.conf; \
+			${ECHO} "$${module}_load=\"YES\"" >> ${BOOTSTRAPDIR}/boot/loader.conf; \
 		fi \
 	done
 
-	echo init_script=\"/chroot\" >> ${BOOTSTRAPDIR}/boot/loader.conf
-	echo init_chroot=\"/base\" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} init_script=\"/${CHROOT}\" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} init_${CHROOT}=\"/base\" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
-	@touch ${PATCH_COOKIE}
+	@${TOUCH} ${PATCH_COOKIE}
 
 # Copy across all kernel objects required for bootstrap
 ${KERNEL_COPY_COOKIE}: ${PATCH_COOKIE}
-	@echo "===> Copying kernel for bootstrap"
-	cp -fp ${BASEDIR}/boot/kernel/kernel ${BOOTSTRAPDIR}/boot/kernel
+	@${ECHO} "===> Copying kernel for bootstrap"
+	${CP} -fp ${BASEDIR}/boot/kernel/kernel ${BOOTSTRAPDIR}/boot/kernel
 
-	-cp -fp ${BASEDIR}/boot/kernel/acpi.ko ${BOOTSTRAPDIR}/boot/kernel 2> /dev/null
+	-${CP} -fp ${BASEDIR}/boot/kernel/a${CP}i.ko ${BOOTSTRAPDIR}/boot/kernel 2> /dev/null
 
-	for module in `grep '[0-9A-Za-z_]_load="[Yy][Ee][Ss]".*' ${BOOTSTRAPDIR}/boot/loader.conf | sed 's|_load="[Yy][Ee][Ss]".*||g' `; \
+	for module in `${GREP} '[0-9A-Za-z_]_load="[Yy][Ee][Ss]".*' ${BOOTSTRAPDIR}/boot/loader.conf | sed 's|_load="[Yy][Ee][Ss]".*||g' `; \
 	do \
-		[ ! -f ${BASEDIR}/boot/kernel/$${module}.ko ] || cp -p ${BASEDIR}/boot/kernel/$${module}.ko ${BOOTSTRAPDIR}/boot/kernel; \
-		[ ! -f ${BASEDIR}/boot/modules/$${module}.ko ] || cp -p ${BASEDIR}/boot/modules/$${module}.ko ${BOOTSTRAPDIR}/boot/modules; \
+		[ ! -f ${BASEDIR}/boot/kernel/$${module}.ko ] || ${CP} -p ${BASEDIR}/boot/kernel/$${module}.ko ${BOOTSTRAPDIR}/boot/kernel; \
+		[ ! -f ${BASEDIR}/boot/modules/$${module}.ko ] || ${CP} -p ${BASEDIR}/boot/modules/$${module}.ko ${BOOTSTRAPDIR}/boot/modules; \
 	done
 
-	@touch ${KERNEL_COPY_COOKIE}
+	@${TOUCH} ${KERNEL_COPY_COOKIE}
 
 # Compress kernel objects
 ${COMPRESS_COOKIE}: ${KERNEL_COPY_COOKIE}
-	@echo "===> Compressing the kernel"
-	gzip -f9 `find ${BOOTSTRAPDIR}/boot/kernel/ -type f` `find ${BOOTSTRAPDIR}/boot/modules/ -type f`
+	@${ECHO} "===> Compressing the kernel"
+	${GZIP} -f9 `${FIND} ${BOOTSTRAPDIR}/boot/kernel/ -type f` `${FIND} ${BOOTSTRAPDIR}/boot/modules/ -type f`
 
-	@touch ${COMPRESS_COOKIE}
+	@${TOUCH} ${COMPRESS_COOKIE}
 
 # Write the bootstrap scripts
 ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
-	@echo "===> Writing the bootstrap script"
-	echo '#!/rescue/sh \
+	@${ECHO} "===> Writing the bootstrap script"
+	${ECHO} '#!/rescue/sh \
 ^PATH=/rescue \
 ^trap "@echo Recovery console: ; PATH=/rescue /rescue/csh -i ; exit" 1 2 3 6 15 \
 ^\
@@ -366,234 +368,234 @@ set -e^\
 ^  camcontrol eject $$CD_DEV \
 ^fi \
 ^\
-^echo "Chroot to base..."' | tr '^' '\n' > ${BOOTSTRAPDIR}/chroot
-	chmod a+x ${BOOTSTRAPDIR}/chroot
+^echo "Chroot to base..."' | tr '^' '\n' > ${BOOTSTRAPDIR}/${CHROOT}
+	${CHMOD} a+x ${BOOTSTRAPDIR}/${CHROOT}
 
-	@touch ${BOOTSTRAPSCRIPT_COOKIE}
+	@${TOUCH} ${BOOTSTRAPSCRIPT_COOKIE}
 
 ${BASECOMPRESSEDIMAGE}: ${UFSFILE}
-	@echo "===> Compressing UFS Image of filesystem..."
-	mkuzip -s 8192 -o ${BASECOMPRESSEDIMAGE} ${UFSFILE}
+	@${ECHO} "===> Compressing UFS Image of filesystem..."
+	${MKUZIP} -s 8192 -o ${BASECOMPRESSEDIMAGE} ${UFSFILE}
 
 .ORDER: ${BOOTSTRAP_COOKIE} ${ISOLIVEFILE} ${UFSLIVEFILE} ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 
 ${BOOTSTRAPCOMPRESSEDIMAGE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
-	@echo "===> Compressing bootstrap UFS Image..."
-	mv ${BOOTSTRAPDIR}/boot ${WORKDIR}/
+	@${ECHO} "===> Compressing bootstrap UFS Image..."
+	${MV} ${BOOTSTRAPDIR}/boot ${WORKDIR}/
 
-	ln ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
+	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
-	makefs ${BOOTSTRAPCOMPRESSEDIMAGE} ${BOOTSTRAPDIR} \
-	  || (mv ${WORKDIR}/boot ${BOOTSTRAPDIR}/; rm ${BOOTSTRAPDIR}/base.ufs.uzip; false)
-	tunefs -L DragonBSDMEM ${BOOTSTRAPCOMPRESSEDIMAGE}
-	gzip -9 ${BOOTSTRAPCOMPRESSEDIMAGE}
-	mv ${BOOTSTRAPCOMPRESSEDIMAGE}.gz ${BOOTSTRAPCOMPRESSEDIMAGE}
+	${MAKEFS} ${BOOTSTRAPCOMPRESSEDIMAGE} ${BOOTSTRAPDIR} \
+	  || (${MV} ${WORKDIR}/boot ${BOOTSTRAPDIR}/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
+	${TUNEFS} -L DragonBSDMEM ${BOOTSTRAPCOMPRESSEDIMAGE}
+	${GZIP} -9 ${BOOTSTRAPCOMPRESSEDIMAGE}
+	${MV} ${BOOTSTRAPCOMPRESSEDIMAGE}.gz ${BOOTSTRAPCOMPRESSEDIMAGE}
 
-	mv ${WORKDIR}/boot ${BOOTSTRAPDIR}/
-	rm ${BOOTSTRAPDIR}/base.ufs.uzip
+	${MV} ${WORKDIR}/boot ${BOOTSTRAPDIR}/
+	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 ${LOADERBOOTSTRAP_COOKIE}: ${BOOTSTRAP_COOKIE}
-	@echo "===> Creating loader environment for compressed bootstrap image..."
-	mkdir -p ${LOADERBOOTSTRAPDIR} ${LOADERBOOTSTRAPDIR}/usr/lib
+	@${ECHO} "===> Creating loader ${ENV}ironment for compressed bootstrap image..."
+	${MKDIR} -p ${LOADERBOOTSTRAPDIR} ${LOADERBOOTSTRAPDIR}/usr/lib
 
-	-(tar -C ${BOOTSTRAPDIR} -cf - boot | tar -C ${LOADERBOOTSTRAPDIR} -xf -)
-	-cp -fp ${BOOTSTRAPDIR}/usr/lib/kgzldr.o ${LOADERBOOTSTRAPDIR}/usr/lib 2> /dev/null
+	-(${TAR} -C ${BOOTSTRAPDIR} -cf - boot | ${TAR} -C ${LOADERBOOTSTRAPDIR} -xf -)
+	-${CP} -fp ${BOOTSTRAPDIR}/usr/lib/kgzldr.o ${LOADERBOOTSTRAPDIR}/usr/lib 2> /dev/null
 
-	@touch ${LOADERBOOTSTRAP_COOKIE}
+	@${TOUCH} ${LOADERBOOTSTRAP_COOKIE}
 
 .ORDER: ${ISOMEMLIVEFILE} ${UFSMEMLIVEFILE}
 
 ${ISOMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
-	@echo "===> Creating Memory based Live ISO image"
-	cp -p ${LOADERBOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
-	echo >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	echo "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	echo "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	echo "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	echo "vfs.root.mountfrom=\"ufs:/dev/ufs/DragonBSDMEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	@${ECHO} "===> Creating Memory based Live ISO image"
+	${CP} -p ${LOADERBOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
+	${ECHO} >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/DragonBSDMEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 
-	ln ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
+	${LN} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
-	mkisofs ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSDMEMLive -o ${ISOMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
-	  || (mv ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; rm ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; false)
+	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSDMEMLive -o ${ISOMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
+	  || (${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
 
-	mv ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
-	rm ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
+	${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
+	${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
 ${UFSMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
-	@echo "===> Creating Memory based Live UFS image"
-	cp -p ${LOADERBOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
-	echo >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	echo "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	echo "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	echo "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	echo "vfs.root.mountfrom=\"ufs:/dev/ufs/DragonBSDMEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	@${ECHO} "===> Creating Memory based Live UFS image"
+	${CP} -p ${LOADERBOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
+	${ECHO} >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/DragonBSDMEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 
-	ln ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
+	${LN} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
-	makefs ${UFSMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
-	  || (mv ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; rm ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; false)
-	tunefs -L DragonBSDMEMLive ${UFSLIVEFILE}
+	${MAKEFS} ${UFSMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
+	  || (${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
+	${TUNEFS} -L DragonBSDMEMLive ${UFSLIVEFILE}
 
-	mv ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
-	rm ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
+	${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
+	${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
 ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
-	@echo "===> Installing packages..."
-	[ -z "`mount | grep ${BASEDIR}`" ] || umount `mount | grep ${BASEDIR} | cut -f 3 -d ' ' | sort -r`
-	mount -t devfs devfs ${BASEDIR}/dev
-	mount -t nullfs ${PKGDIR} ${BASEDIR}/mnt
+	@${ECHO} "===> Installing packages..."
+	[ -z "`${MOUNT} | ${GREP} ${BASEDIR}`" ] || ${UMOUNT} `${MOUNT} | ${GREP} ${BASEDIR} | ${CUT} -f 3 -d ' ' | ${SORT} -r`
+	${MOUNT} -t devfs devfs ${BASEDIR}/dev
+	${MOUNT} -t nullfs ${PKGDIR} ${BASEDIR}/mnt
 	for PKG in ${PKGS}; \
 	do \
 		pkgs=`cd ${BASEDIR}/mnt/All; ls $${PKG}*t[bg]z 2> /dev/null || true`; \
 		if [ -n "$${pkgs}" ]; \
 		then \
-			echo "==> Installing packages: $${pkgs}"; \
-			chroot ${BASEDIR} sh -c "cd /mnt/All && pkg_add -F $${pkgs}" || \
-			  (umount ${BASEDIR}/dev ${BASEDIR}/mnt; false); \
+			${ECHO} "==> Installing packages: $${pkgs}"; \
+			${CHROOT} ${BASEDIR} sh -c "cd /mnt/All && pkg_a${DD} -F $${pkgs}" || \
+			  (${UMOUNT} ${BASEDIR}/dev ${BASEDIR}/mnt; ${FALSE}); \
 		else \
-			echo "==> No packages with name $${PKG}"; \
+			${ECHO} "==> No packages with name $${PKG}"; \
 		fi; \
 	done
-	umount ${BASEDIR}/dev ${BASEDIR}/mnt
+	${UMOUNT} ${BASEDIR}/dev ${BASEDIR}/mnt
 
-	@touch ${PACKAGE_COOKIE}
+	@${TOUCH} ${PACKAGE_COOKIE}
 
 _MOUNTDIRS=${BASEDIR}/tmp ${BASEDIR}/dev ${BASEDIR}/usr/freebsd ${BASEDIR}/usr/ports #${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd/packages
 
 ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
-	@echo "===> Installing ports..."
-	[ -z "`mount | grep ${BASEDIR}`" ] || umount `mount | grep ${BASEDIR} | cut -f 3 -d ' ' | sort -r`
-	mkdir -p ${BASEDIR}/usr/ports ${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd
-	mount -t nullfs /usr/ports ${BASEDIR}/usr/ports
-	mount -t nullfs /usr/freebsd ${BASEDIR}/usr/freebsd
-	mount -t devfs devfs ${BASEDIR}/dev
-	mount -t tmpfs tmpfs ${BASEDIR}/tmp
-	#mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
-	#mount -t nullfs ${PKGDIR} ${BASEDIR}/usr/ports/packages
+	@${ECHO} "===> Installing ports..."
+	[ -z "`${MOUNT} | ${GREP} ${BASEDIR}`" ] || ${UMOUNT} `${MOUNT} | ${GREP} ${BASEDIR} | ${CUT} -f 3 -d ' ' | ${SORT} -r`
+	${MKDIR} -p ${BASEDIR}/usr/ports ${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd
+	${MOUNT} -t nullfs /usr/ports ${BASEDIR}/usr/ports
+	${MOUNT} -t nullfs /usr/freebsd ${BASEDIR}/usr/freebsd
+	${MOUNT} -t devfs devfs ${BASEDIR}/dev
+	${MOUNT} -t tmpfs tmpfs ${BASEDIR}/tmp
+	#${MOUNT} -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
+	#${MOUNT} -t nullfs ${PKGDIR} ${BASEDIR}/usr/ports/packages
 
 	for PORT in ${PORTS}; \
 	do \
 		if [ -d ${BASEDIR}/usr/ports/$${PORT} ]; \
 		then \
-			pkg=`chroot ${BASEDIR} make -C /usr/ports/$${PORT} package-name`; \
+			pkg=`${CHROOT} ${BASEDIR} ${MAKE} -C /usr/ports/$${PORT} package-name`; \
 			if [ ! -f "`ls ${BASEDIR}/usr/ports/packages/All/$${pkg}.t[bg]z 2> /dev/null`" ]; \
 			then \
-				echo "==> Building port: $${PORT} ($${pkg})"; \
-				chroot ${BASEDIR} make -C /usr/ports/$${PORT} install package-recursive clean BATCH=yes DEPENDS_CLEAN=yes NOCLEANDEPENDS=yes || \
-				  (umount ${_MOUNTDIRS}; false); \
+				${ECHO} "==> Building port: $${PORT} ($${pkg})"; \
+				${CHROOT} ${BASEDIR} ${MAKE} -C /usr/ports/$${PORT} install package-recursive clean BATCH=yes DEPENDS_CLEAN=yes NOCLEANDEPENDS=yes || \
+				  (${UMOUNT} ${_MOUNTDIRS}; ${FALSE}); \
 			else \
-				echo "==> Installing port: $${PORT} ($${pkg})"; \
-				chroot ${BASEDIR} sh -c "cd /usr/ports/packages/All && pkg_add -F $${pkg}.t[bg]z" || \
-				  (umount ${_MOUNTDIRS}; false); \
+				${ECHO} "==> Installing port: $${PORT} ($${pkg})"; \
+				${CHROOT} ${BASEDIR} sh -c "cd /usr/ports/packages/All && pkg_a${DD} -F $${pkg}.t[bg]z" || \
+				  (${UMOUNT} ${_MOUNTDIRS}; ${FALSE}); \
 			fi; \
 		else \
-			echo "==> No port with name $${PORT}"; \
+			${ECHO} "==> No port with name $${PORT}"; \
 		fi; \
 	done
 
-	umount ${_MOUNTDIRS}
+	${UMOUNT} ${_MOUNTDIRS}
 
-	@touch ${PORTS_COOKIE}
+	@${TOUCH} ${PORTS_COOKIE}
 
 ${SCRIPTS_COOKIE}: ${PORTS_COOKIE}
-	@echo "===> Running customising scripts..."
+	@${ECHO} "===> Running customising scripts..."
 .for script in ${SCRIPTS}
 .if ${SCRIPTSDIR} != ${_MASTERSCRIPTSDIR}
 	if [ -x ${SCRIPTSDIR}/${script} ]; then \
-		env BASEDIR=${BASEDIR} CONFIG=${CONFIG} ${SCRIPTSDIR}/${script}; \
+		${ENV} BASEDIR=${BASEDIR} CONFIG=${CONFIG} ${SCRIPTSDIR}/${script}; \
 	else \
-		env BASEDIR=${BASEDIR} CONFIG=${CONFIG} ${_MASTERSCRIPTSDIR}/${script}; \
+		${ENV} BASEDIR=${BASEDIR} CONFIG=${CONFIG} ${_MASTERSCRIPTSDIR}/${script}; \
 	fi
 .else
-	env BASEDIR=${BASEDIR} CONFIG=${CONFIG} ${SCRIPTSDIR}/${script}
+	${ENV} BASEDIR=${BASEDIR} CONFIG=${CONFIG} ${SCRIPTSDIR}/${script}
 .endif
 .endfor
 
-	@touch ${SCRIPTS_COOKIE}
+	@${TOUCH} ${SCRIPTS_COOKIE}
 
 # Create an ISO image (from the base image)
 ${ISOFILE}: ${BASE_COOKIE}
-	@echo "===> Creating ISO image"
-	cp -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
-	cp -p ${BASEDIR}/etc/rc.conf ${WORKDIR}/
-	echo >> ${BASEDIR}/boot/loader.conf
-	echo "vfs.root.mountfrom=\"cd9660:/dev/iso9660/DragonBSD\"" >> ${BASEDIR}/boot/loader.conf
-	if [ -z "`grep root_rw_mount= ${BASEDIR}/etc/rc.conf`" ]; then \
-		echo >> ${BASEDIR}/etc/rc.conf; \
-		echo 'root_rw_mount="NO"' >> ${BASEDIR}/etc/rc.conf; \
+	@${ECHO} "===> Creating ISO image"
+	${CP} -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
+	${CP} -p ${BASEDIR}/etc/rc.conf ${WORKDIR}/
+	${ECHO} >> ${BASEDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"cd9660:/dev/iso9660/DragonBSD\"" >> ${BASEDIR}/boot/loader.conf
+	if [ -z "`${GREP} root_rw_${MOUNT}= ${BASEDIR}/etc/rc.conf`" ]; then \
+		${ECHO} >> ${BASEDIR}/etc/rc.conf; \
+		${ECHO} 'root_rw_${MOUNT}="NO"' >> ${BASEDIR}/etc/rc.conf; \
 	fi
 
-	mkisofs ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSD -o ${ISOFILE} ${BASEDIR} \
-          || (mv ${WORKDIR}/rc.conf ${BASEDIR}/etc/; mv ${WORKDIR}/loader.conf ${BASEDIR}/boot/; false)
+	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSD -o ${ISOFILE} ${BASEDIR} \
+          || (${MV} ${WORKDIR}/rc.conf ${BASEDIR}/etc/; ${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/; ${FALSE})
 
-	mv ${WORKDIR}/rc.conf ${BASEDIR}/etc/
-	mv ${WORKDIR}/loader.conf ${BASEDIR}/boot/
+	${MV} ${WORKDIR}/rc.conf ${BASEDIR}/etc/
+	${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/
 
 # Create an ISO image with editable filesystem (live)
 ${ISOLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
-	@echo "===> Creating Live ISO image"
-	cp -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
-	echo >> ${BOOTSTRAPDIR}/boot/loader.conf
-	echo "vfs.root.mountfrom=\"cd9660:/dev/iso9660/DragonBSDLive\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	@${ECHO} "===> Creating Live ISO image"
+	${CP} -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
+	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"cd9660:/dev/iso9660/DragonBSDLive\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
-	ln ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
+	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
-	mkisofs ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSDLive -o ${ISOLIVEFILE} ${BOOTSTRAPDIR} \
-	  || (mv ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; rm ${BOOTSTRAPDIR}/base.ufs.uzip; false)
+	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSDLive -o ${ISOLIVEFILE} ${BOOTSTRAPDIR} \
+	  || (${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
 
-	mv ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
-	rm ${BOOTSTRAPDIR}/base.ufs.uzip
+	${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
+	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 # Create an UFS image (from the base image)
 ${UFSFILE}: ${BASE_COOKIE}
-	@echo "===> Creating UFS Image"
-	cp -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
-	echo >> ${BASEDIR}/boot/loader.conf
-	echo "vfs.root.mountfrom=\"ufs:/dev/ufs/DragonBSD\"" >> ${BASEDIR}/boot/loader.conf
+	@${ECHO} "===> Creating UFS Image"
+	${CP} -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
+	${ECHO} >> ${BASEDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/DragonBSD\"" >> ${BASEDIR}/boot/loader.conf
 
-	makefs ${UFSFILE} ${BASEDIR} \
-	  || (mv ${WORKDIR}/loader.conf ${BASEDIR}/boot/; false)
-	tunefs -L DragonBSD ${UFSFILE}
+	${MAKEFS} ${UFSFILE} ${BASEDIR} \
+	  || (${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/; ${FALSE})
+	${TUNEFS} -L DragonBSD ${UFSFILE}
 
-	mv ${WORKDIR}/loader.conf ${BASEDIR}/boot/
+	${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/
 
 ${UFSLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
-	@echo "===> Creating Live UFS image"
-	cp -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
-	echo >> ${BOOTSTRAPDIR}/boot/loader.conf
-	echo "vfs.root.mountfrom=\"ufs:/dev/ufs/DragonBSDLive\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	@${ECHO} "===> Creating Live UFS image"
+	${CP} -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
+	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/DragonBSDLive\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
-	ln ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
+	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
-	makefs ${UFSLIVEFILE} ${BOOTSTRAPDIR} \
-	  || (mv ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; rm ${BOOTSTRAPDIR}/base.ufs.uzip; false)
-	tunefs -L DragonBSDLive ${UFSLIVEFILE}
+	${MAKEFS} ${UFSLIVEFILE} ${BOOTSTRAPDIR} \
+	  || (${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
+	${TUNEFS} -L DragonBSDLive ${UFSLIVEFILE}
 
-	mv ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
-	rm ${BOOTSTRAPDIR}/base.ufs.uzip
+	${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
+	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 partition_usb: ${IMAGEFILE}
-	@echo "===> Partitioning device ${DEV}"
-	fdisk -BI ${DEV}
-	bsdlabel -Bwb ${BASEDIR}/boot/boot ${DEV}s1
-	echo "8 partitions: \
-^a: `du -Ak ${IMAGEFILE} | cut -f 1`k * 4.2BSD \
+	@${ECHO} "===> Partitioning device ${DEV}"
+	${FDISK} -BI ${DEV}
+	${BSDLABEL} -Bwb ${BASEDIR}/boot/boot ${DEV}s1
+	${ECHO} "8 partitions: \
+^a: `du -Ak ${IMAGEFILE} | ${CUT} -f 1`k * 4.2BSD \
 ^b: * * 4.2BSD \
-^c: * * unused" | tr '^' '\n' >> ${WORKDIR}/bsdlabel
-	bsdlabel -R ${DEV}s1 ${WORKDIR}/bsdlabel
-	rm ${WORKDIR}/bsdlabel
-	newfs -EUL DragonBSDUFS ${DEV}s1b
+^c: * * unused" | tr '^' '\n' >> ${WORKDIR}/${BSDLABEL}
+	${BSDLABEL} -R ${DEV}s1 ${WORKDIR}/${BSDLABEL}
+	${RM} ${WORKDIR}/${BSDLABEL}
+	${NEWFS} -EUL DragonBSDUFS ${DEV}s1b
 
 copy_ufs: ${IMAGEFILE}
-	@echo "===> Copying UFS image to device ${DEV}..."
-	dd if=${IMAGEFILE} of=${DEV}s1a bs=64k
+	@${ECHO} "===> Copying UFS image to device ${DEV}..."
+	${DD} if=${IMAGEFILE} of=${DEV}s1a bs=64k
 
 burn_iso: ${IMAGEFILE}
-	@echo "===> Burning ISO image to device ${DEV}..."
+	@${ECHO} "===> Burning ISO image to device ${DEV}..."
 .if defined(BLANK)
-	cdrecord blank=${BLANK} dev=${DEV} -eject -data ${IMAGEFILE}
+	${CDRECORD} blank=${BLANK} dev=${DEV} -eject -data ${IMAGEFILE}
 .else
-	cdrecord dev=${DEV} -overburn -eject -data ${IMAGEFILE}
+	${CDRECORD} dev=${DEV} -overburn -eject -data ${IMAGEFILE}
 .endif
 	#burncd -e -f ${DEV} -s max blank data ${IMAGEFILE} fixate
