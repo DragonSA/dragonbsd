@@ -7,6 +7,9 @@
 .include "bsd.commands.mk"
 .include "bsd.docs.mk"
 
+# The name of the system
+NAME?=		DragonBSD
+
 MDMFS_SIZE?=	32m
 SCRIPTS?=	
 
@@ -68,12 +71,12 @@ BOOTSTRAPMODULES+=	zlib geom_uzip unionfs
 ## Target images
 BASECOMPRESSEDIMAGE?=		${WORKDIR}/base.ufs.uzip
 BOOTSTRAPCOMPRESSEDIMAGE?=	${WORKDIR}/bootstrap.ufs.gz
-ISOFILE?=			${WORKDIR}/dragonbsd.iso
-ISOMEMLIVEFILE?=		${WORKDIR}/dragonbsd-mem-live.iso
-ISOLIVEFILE?=			${WORKDIR}/dragonbsd-live.iso
-UFSFILE?=			${WORKDIR}/dragonbsd.ufs
-UFSLIVEFILE?=			${WORKDIR}/dragonbsd-live.ufs
-UFSMEMLIVEFILE?=		${WORKDIR}/dragonbsd-mem-live.ufs
+ISOFILE?=			${WORKDIR}/${NAME:L}.iso
+ISOMEMLIVEFILE?=		${WORKDIR}/${NAME:L}-mem-live.iso
+ISOLIVEFILE?=			${WORKDIR}/${NAME:L}-live.iso
+UFSFILE?=			${WORKDIR}/${NAME:L}.ufs
+UFSLIVEFILE?=			${WORKDIR}/${NAME:L}-live.ufs
+UFSMEMLIVEFILE?=		${WORKDIR}/${NAME:L}-mem-live.ufs
 
 ## Sundry
 MKISOFLAGS=	-quiet -sysid FREEBSD -rock -untranslated-filenames -max-iso9660-filenames -iso-level 4
@@ -292,10 +295,10 @@ set -e^\
 ^  mount -o ro /dev/$$(mdconfig -a -t vnode -o readonly -f /base.ufs) /base \
 ^fi \
 ^\
-^if [ -w /dev/ufs/DragonBSDUFS ] \
+^if [ -w /dev/ufs/${NAME}UFS ] \
 ^then \
 ^  echo -n "Overlaying filesystem:" \
-^  mount /dev/ufs/DragonBSDUFS /overlay \
+^  mount /dev/ufs/${NAME}UFS /overlay \
 ^else \
 ^  echo -n "Allocating temporary filesystem (${MDMFS_SIZE}):" \
 ^  mdmfs -s ${MDMFS_SIZE} md /overlay \
@@ -323,7 +326,7 @@ set -e^\
 ^  esac \
 ^fi \
 ^\
-^CD_DEV=$$(dmesg | sed -n -e "s|.* a\(cd[0-9]\+\) .*iso9660/DragonBSDMEMLive.*|\1|p" | sed "1 q") \
+^CD_DEV=$$(dmesg | sed -n -e "s|.* a\(cd[0-9]\+\) .*iso9660/${NAME}MEMLive.*|\1|p" | sed "1 q") \
 ^if [ -n "$$CD_DEV" ] \
 ^then \
 ^  echo "Ejecting CD-ROM..." \
@@ -353,7 +356,7 @@ ${BOOTSTRAPCOMPRESSEDIMAGE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 
 	${MAKEFS} ${BOOTSTRAPCOMPRESSEDIMAGE} ${BOOTSTRAPDIR} \
 	  || (${MV} ${WORKDIR}/boot ${BOOTSTRAPDIR}/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
-	${TUNEFS} -L DragonBSDMEM ${BOOTSTRAPCOMPRESSEDIMAGE}
+	${TUNEFS} -L ${NAME}MEM ${BOOTSTRAPCOMPRESSEDIMAGE}
 	${GZIP} -9 ${BOOTSTRAPCOMPRESSEDIMAGE}
 	${MV} ${BOOTSTRAPCOMPRESSEDIMAGE}.gz ${BOOTSTRAPCOMPRESSEDIMAGE}
 
@@ -378,11 +381,11 @@ ${ISOMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	${ECHO} "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/DragonBSDMEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/${NAME}MEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
-	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSDMEMLive -o ${ISOMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
+	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME}MEMLive -o ${ISOMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
 	  || (${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
 
 	${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
@@ -395,13 +398,13 @@ ${UFSMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	${ECHO} "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/DragonBSDMEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/${NAME}MEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
 	${MAKEFS} ${UFSMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
 	  || (${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
-	${TUNEFS} -L DragonBSDMEMLive ${UFSLIVEFILE}
+	${TUNEFS} -L ${NAME}MEMLive ${UFSLIVEFILE}
 
 	${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
 	${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
@@ -486,13 +489,13 @@ ${ISOFILE}: ${BASE_COOKIE}
 	${CP} -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
 	${CP} -p ${BASEDIR}/etc/rc.conf ${WORKDIR}/
 	${ECHO} >> ${BASEDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"cd9660:/dev/iso9660/DragonBSD\"" >> ${BASEDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"cd9660:/dev/iso9660/${NAME}\"" >> ${BASEDIR}/boot/loader.conf
 	if [ -z "`${GREP} root_rw_${MOUNT}= ${BASEDIR}/etc/rc.conf`" ]; then \
 		${ECHO} >> ${BASEDIR}/etc/rc.conf; \
 		${ECHO} 'root_rw_${MOUNT}="NO"' >> ${BASEDIR}/etc/rc.conf; \
 	fi
 
-	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSD -o ${ISOFILE} ${BASEDIR} \
+	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME} -o ${ISOFILE} ${BASEDIR} \
           || (${MV} ${WORKDIR}/rc.conf ${BASEDIR}/etc/; ${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/; ${FALSE})
 
 	${MV} ${WORKDIR}/rc.conf ${BASEDIR}/etc/
@@ -503,11 +506,11 @@ ${ISOLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	@${ECHO} "===> Creating Live ISO image"
 	${CP} -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
 	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"cd9660:/dev/iso9660/DragonBSDLive\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"cd9660:/dev/iso9660/${NAME}Live\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
-	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid DragonBSDLive -o ${ISOLIVEFILE} ${BOOTSTRAPDIR} \
+	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME}Live -o ${ISOLIVEFILE} ${BOOTSTRAPDIR} \
 	  || (${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
 
 	${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
@@ -518,11 +521,11 @@ ${UFSFILE}: ${BASE_COOKIE}
 	@${ECHO} "===> Creating UFS Image"
 	${CP} -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
 	${ECHO} >> ${BASEDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/DragonBSD\"" >> ${BASEDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/${NAME}\"" >> ${BASEDIR}/boot/loader.conf
 
 	${MAKEFS} ${UFSFILE} ${BASEDIR} \
 	  || (${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/; ${FALSE})
-	${TUNEFS} -L DragonBSD ${UFSFILE}
+	${TUNEFS} -L ${NAME} ${UFSFILE}
 
 	${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/
 
@@ -530,13 +533,13 @@ ${UFSLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	@${ECHO} "===> Creating Live UFS image"
 	${CP} -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
 	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/DragonBSDLive\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/${NAME}Live\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 	${MAKEFS} ${UFSLIVEFILE} ${BOOTSTRAPDIR} \
 	  || (${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
-	${TUNEFS} -L DragonBSDLive ${UFSLIVEFILE}
+	${TUNEFS} -L ${NAME}Live ${UFSLIVEFILE}
 
 	${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
 	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
@@ -551,7 +554,7 @@ partition_usb: ${IMAGEFILE}
 ^c: * * unused" | tr '^' '\n' >> ${WORKDIR}/${BSDLABEL}
 	${BSDLABEL} -R ${DEV}s1 ${WORKDIR}/${BSDLABEL}
 	${RM} ${WORKDIR}/${BSDLABEL}
-	${NEWFS} -EUL DragonBSDUFS ${DEV}s1b
+	${NEWFS} -EUL ${NAME}UFS ${DEV}s1b
 
 copy_ufs: ${IMAGEFILE}
 	@${ECHO} "===> Copying UFS image to device ${DEV}..."
