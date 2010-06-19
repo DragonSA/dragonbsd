@@ -5,10 +5,14 @@
 .endif
 
 .include "bsd.commands.mk"
-.include "bsd.docs.mk"
+.include "bsd.doc.mk"
 
 # The name of the system
 NAME?=		DragonBSD
+NAME_BTSTRP?=	${NAME}BTSTRP
+NAME_LIVE?=	${NAME}Live
+NAME_MEM_LIVE?=	${NAME}MEMLive
+NAME_UFS?=	${NAME}UFS
 
 MDMFS_SIZE?=	32m
 SCRIPTS?=	
@@ -295,10 +299,10 @@ set -e^\
 ^  mount -o ro /dev/$$(mdconfig -a -t vnode -o readonly -f /base.ufs) /base \
 ^fi \
 ^\
-^if [ -w /dev/ufs/${NAME}UFS ] \
+^if [ -w /dev/ufs/${NAME_UFS} ] \
 ^then \
 ^  echo -n "Overlaying filesystem:" \
-^  mount /dev/ufs/${NAME}UFS /overlay \
+^  mount /dev/ufs/${NAME_UFS} /overlay \
 ^else \
 ^  echo -n "Allocating temporary filesystem (${MDMFS_SIZE}):" \
 ^  mdmfs -s ${MDMFS_SIZE} md /overlay \
@@ -326,7 +330,7 @@ set -e^\
 ^  esac \
 ^fi \
 ^\
-^CD_DEV=$$(dmesg | sed -n -e "s|.* a\(cd[0-9]\+\) .*iso9660/${NAME}MEMLive.*|\1|p" | sed "1 q") \
+^CD_DEV=$$(dmesg | sed -n -e "s|.* a\(cd[0-9]\+\) .*iso9660/${NAME_MEM_LIVE}.*|\1|p" | sed "1 q") \
 ^if [ -n "$$CD_DEV" ] \
 ^then \
 ^  echo "Ejecting CD-ROM..." \
@@ -356,7 +360,7 @@ ${BOOTSTRAPCOMPRESSEDIMAGE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 
 	${MAKEFS} ${BOOTSTRAPCOMPRESSEDIMAGE} ${BOOTSTRAPDIR} \
 	  || (${MV} ${WORKDIR}/boot ${BOOTSTRAPDIR}/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
-	${TUNEFS} -L ${NAME}MEM ${BOOTSTRAPCOMPRESSEDIMAGE}
+	${TUNEFS} -L ${NAME_BTSTRP} ${BOOTSTRAPCOMPRESSEDIMAGE}
 	${GZIP} -9 ${BOOTSTRAPCOMPRESSEDIMAGE}
 	${MV} ${BOOTSTRAPCOMPRESSEDIMAGE}.gz ${BOOTSTRAPCOMPRESSEDIMAGE}
 
@@ -381,11 +385,11 @@ ${ISOMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	${ECHO} "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/${NAME}MEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.mountfrom=\"ufs:/dev/ufs/${NAME_BTSTRP}\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
-	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME}MEMLive -o ${ISOMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
+	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME_MEM_LIVE} -o ${ISOMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
 	  || (${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
 
 	${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
@@ -398,13 +402,13 @@ ${UFSMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	${ECHO} "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/${NAME}MEM\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.mountfrom=\"ufs:/dev/ufs/${NAME_BTSTRP}\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
 	${MAKEFS} ${UFSMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
 	  || (${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
-	${TUNEFS} -L ${NAME}MEMLive ${UFSLIVEFILE}
+	${TUNEFS} -L ${NAME_MEM_LIVE} ${UFSLIVEFILE}
 
 	${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
 	${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
@@ -489,7 +493,7 @@ ${ISOFILE}: ${BASE_COOKIE}
 	${CP} -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
 	${CP} -p ${BASEDIR}/etc/rc.conf ${WORKDIR}/
 	${ECHO} >> ${BASEDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"cd9660:/dev/iso9660/${NAME}\"" >> ${BASEDIR}/boot/loader.conf
+	${ECHO} "vfs.root.mountfrom=\"cd9660:/dev/iso9660/${NAME}\"" >> ${BASEDIR}/boot/loader.conf
 	if [ -z "`${GREP} root_rw_${MOUNT}= ${BASEDIR}/etc/rc.conf`" ]; then \
 		${ECHO} >> ${BASEDIR}/etc/rc.conf; \
 		${ECHO} 'root_rw_${MOUNT}="NO"' >> ${BASEDIR}/etc/rc.conf; \
@@ -506,11 +510,11 @@ ${ISOLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	@${ECHO} "===> Creating Live ISO image"
 	${CP} -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
 	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"cd9660:/dev/iso9660/${NAME}Live\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.mountfrom=\"cd9660:/dev/iso9660/${NAME_LIVE}\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
-	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME}Live -o ${ISOLIVEFILE} ${BOOTSTRAPDIR} \
+	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME_LIVE} -o ${ISOLIVEFILE} ${BOOTSTRAPDIR} \
 	  || (${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
 
 	${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
@@ -521,7 +525,7 @@ ${UFSFILE}: ${BASE_COOKIE}
 	@${ECHO} "===> Creating UFS Image"
 	${CP} -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
 	${ECHO} >> ${BASEDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/${NAME}\"" >> ${BASEDIR}/boot/loader.conf
+	${ECHO} "vfs.root.mountfrom=\"ufs:/dev/ufs/${NAME}\"" >> ${BASEDIR}/boot/loader.conf
 
 	${MAKEFS} ${UFSFILE} ${BASEDIR} \
 	  || (${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/; ${FALSE})
@@ -533,13 +537,13 @@ ${UFSLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	@${ECHO} "===> Creating Live UFS image"
 	${CP} -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
 	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
-	${ECHO} "vfs.root.${MOUNT}from=\"ufs:/dev/ufs/${NAME}Live\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} "vfs.root.mountfrom=\"ufs:/dev/ufs/${NAME_LIVE}\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 	${MAKEFS} ${UFSLIVEFILE} ${BOOTSTRAPDIR} \
 	  || (${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
-	${TUNEFS} -L ${NAME}Live ${UFSLIVEFILE}
+	${TUNEFS} -L ${NAME_LIVE} ${UFSLIVEFILE}
 
 	${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
 	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
@@ -554,7 +558,7 @@ partition_usb: ${IMAGEFILE}
 ^c: * * unused" | tr '^' '\n' >> ${WORKDIR}/${BSDLABEL}
 	${BSDLABEL} -R ${DEV}s1 ${WORKDIR}/${BSDLABEL}
 	${RM} ${WORKDIR}/${BSDLABEL}
-	${NEWFS} -EUL ${NAME}UFS ${DEV}s1b
+	${NEWFS} -EUL ${NAME_UFS} ${DEV}s1b
 
 copy_ufs: ${IMAGEFILE}
 	@${ECHO} "===> Copying UFS image to device ${DEV}..."

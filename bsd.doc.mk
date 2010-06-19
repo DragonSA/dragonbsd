@@ -32,6 +32,7 @@ help: usage
 	@${ECHO} "	help		Displays this help message"
 	@${ECHO} "	help-[type]	Displays discription for [type] image (from above) [TODO]"
 	@${ECHO} "	help-config	Displays information for customising a system image [TODO]"
+	@${ECHO} "	help-config-all	Displays all information for customising a system image"
 	@${ECHO}
 	@${ECHO} "???For further help see the manual pages (eg man dragonbsd) [TODO]"
 
@@ -46,8 +47,20 @@ help-config:
 	@${ECHO} "All customisable variables"
 	@${ECHO}
 	@${ECHO} "WRKDIR:	A temporary working directory used when generating files"
-	@${ECHO} "		[default: ${PWD}/work/]
+	@${ECHO} "		[default: $${PWD}/work/]
 	@${ECHO} "TARGET:	The target architecture for the system (has to be compatible"
-	@${ECHO} "		with this system [default: ${UNAME_p}]"
+	@${ECHO} "		with this system"
+	@${ECHO} "		[default: ${UNAME_p}]"
 	@${ECHO} "NAME:		The name of the system.  Used for naming the generated files"
 	@${ECHO} "		[default: DragonBSD]"
+
+help-config-all:
+	@${ECHO} "NAME: System name variables"
+	@${ECHO} "	NAME_BTSTRP:	Name of the bootstrap UFS filesystem"
+	@${ECHO} "			[default: $${NAME}BTSTRP]"
+	@${ECHO} "	NAME_LIVE:	Name of the live UFS/ISO image"
+	@${ECHO} "			[default: $${NAME}Live]
+	@${ECHO} "	NAME_MEM_LIVE:	Name of the memory based live UFS/ISO image"
+	@${ECHO} "			[default: $${NAME}MEMLive]"
+	@${ECHO} "	NAME_UFS:	Name of the UFS overlay filesystem"
+	@${ECHO} "			[default: $${NAME}UFS]"
