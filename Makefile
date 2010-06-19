@@ -33,24 +33,24 @@ _MASTERSCRIPTSDIR= ${.CURDIR}/scripts
 PKGDIR?=	${DISTFILES}/packages
 
 .  if ${KERNCONF} == GENERIC
-KERNELSRC?=	${DISTFILES}/kernel.tar.bz2
+KERNELSRC?=	${DISTFILES}/kernel.tar.xz
 .  else
-KERNELSRC?=	${DISTFILES}/kernel-${KERNCONF}.tar.bz2
+KERNELSRC?=	${DISTFILES}/kernel-${KERNCONF}.tar.xz
 .  endif
 PKG_ENV_DIR?=	/home/pkg_env
-WORLDSRC?=	${DISTFILES}/world.tar.bz2
+WORLDSRC?=	${DISTFILES}/world.tar.xz
 
 .else
 
 PKGDIR?=	${DISTFILES}/packages-${TARGET}
 
 .  if ${KERNCONF} == GENERIC
-KERNELSRC?=	${DISTFILES}/kernel-${TARGET}.tar.bz2
+KERNELSRC?=	${DISTFILES}/kernel-${TARGET}.tar.xz
 .  else
-KERNELSRC?=	${DISTFILES}/kernel-${KERNCONF}-${TARGET}.tar.bz2
+KERNELSRC?=	${DISTFILES}/kernel-${KERNCONF}-${TARGET}.tar.xz
 .  endif
 PKG_ENV_DIR?=	/home/pkg_env_${TARGET}
-WORLDSRC?=	${DISTFILES}/world-${TARGET}.tar.bz2
+WORLDSRC?=	${DISTFILES}/world-${TARGET}.tar.xz
 
 .endif
 
@@ -203,7 +203,7 @@ ${WORLDSRC}:
 	make -C ${SRCDIR} -j`sysctl -n hw.ncpu` buildworld TARGET=${TARGET}
 	WORLDTMP=`mktemp -d /tmp/world.XXXXXX` && \
 	make -C ${SRCDIR} installworld distribution DESTDIR=$${WORLDTMP} TARGET=${TARGET} && \
-	tar -C $${WORLDTMP} -cjf ${WORLDSRC} . && \
+	tar -C $${WORLDTMP} -cJf ${WORLDSRC} . && \
 	(rm -rf $${WORLDTMP} || (chflags -R 0 $${WORLDTMP}; rm -rf $${WORLDTMP}))
 
 
@@ -221,7 +221,7 @@ ${KERNELSRC}:
 	make -C ${SRCDIR} -j`sysctl -n hw.ncpu` kernel-toolchain buildkernel KERNCONF=${KERNCONF} TARGET=${TARGET}
 	KERNELTMP=`mktemp -d /tmp/kernel.XXXXXX` && \
 	make -C ${SRCDIR} installkernel DESTDIR=$${KERNELTMP} KERNCONF=${KERNCONF} TARGET=${TARGET} && \
-	tar -C $${KERNELTMP} -cjf ${KERNELSRC} . && \
+	tar -C $${KERNELTMP} -cJf ${KERNELSRC} . && \
 	(rm -rf $${KERNELTMP} || (chflags -R 0 $${KERNELTMP}; rm -rf $${KERNELTMP}))
 
 # Extract the kernel (aka `make installkernel`)
