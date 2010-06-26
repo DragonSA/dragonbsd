@@ -25,12 +25,12 @@ TARGET?=	${UNAME_p}
 ## Working directories
 UNAME_p!=	${UNAME} -p
 . if ${TARGET} == ${UNAME_p}
-WORKDIR?=	${PWD}/work
+WRKDIR?=	${PWD}/work
 .else
-WORKDIR?=	${PWD}/work/${TARGET}
+WRKDIR?=	${PWD}/work/${TARGET}
 .endif
-BASEDIR?=	${WORKDIR}/base
-BOOTSTRAPDIR?=	${WORKDIR}/bootstrap
+BASEDIR?=	${WRKDIR}/base
+BOOTSTRAPDIR?=	${WRKDIR}/bootstrap
 
 ## Source files
 DISTFILES?=	${PWD}/distfiles
@@ -73,37 +73,37 @@ BOOTSTRAPFILES+=	etc/login.conf
 BOOTSTRAPMODULES+=	zlib geom_uzip unionfs
 
 ## Target images
-BASECOMPRESSEDIMAGE?=		${WORKDIR}/base.ufs.uzip
-BOOTSTRAPCOMPRESSEDIMAGE?=	${WORKDIR}/bootstrap.ufs.gz
-ISOFILE?=			${WORKDIR}/${NAME:L}.iso
-ISOMEMLIVEFILE?=		${WORKDIR}/${NAME:L}-mem-live.iso
-ISOLIVEFILE?=			${WORKDIR}/${NAME:L}-live.iso
-UFSFILE?=			${WORKDIR}/${NAME:L}.ufs
-UFSLIVEFILE?=			${WORKDIR}/${NAME:L}-live.ufs
-UFSMEMLIVEFILE?=		${WORKDIR}/${NAME:L}-mem-live.ufs
+BASECOMPRESSEDIMAGE?=		${WRKDIR}/base.ufs.uzip
+BOOTSTRAPCOMPRESSEDIMAGE?=	${WRKDIR}/bootstrap.ufs.gz
+ISOFILE?=			${WRKDIR}/${NAME:L}.iso
+ISOMEMLIVEFILE?=		${WRKDIR}/${NAME:L}-mem-live.iso
+ISOLIVEFILE?=			${WRKDIR}/${NAME:L}-live.iso
+UFSFILE?=			${WRKDIR}/${NAME:L}.ufs
+UFSLIVEFILE?=			${WRKDIR}/${NAME:L}-live.ufs
+UFSMEMLIVEFILE?=		${WRKDIR}/${NAME:L}-mem-live.ufs
 
 ## Sundry
 MKISOFLAGS=	-quiet -sysid FREEBSD -rock -untranslated-filenames -max-iso9660-filenames -iso-level 4
 
 ## Name of cookies
-BASE_COOKIE=		${WORKDIR}/.base-done
-BASEDIR_COOKIE=		${WORKDIR}/.basedir-done
-BOOTSTRAP_COOKIE=	${WORKDIR}/.bootstrap-done
-BOOTSTRAPDIR_COOKIE=	${WORKDIR}/.bootstrapdir-done
-BOOTSTRAPSCRIPT_COOKIE=	${WORKDIR}/.bootstrapscript-done
-COMPRESS_COOKIE=	${WORKDIR}/.compress-dir
-CONFIG_COPY_COOKIE=	${WORKDIR}/.config_copy-done
-FILES_COPY_COOKIE=	${WORKDIR}/.files_copy-done
-KERNEL_COPY_COOKIE=	${WORKDIR}/.kernel_copy-done
-KERNEL_EXTRACT_COOKIE=	${WORKDIR}/.kernel_extract-done
-LOADER_COOKIE=		${WORKDIR}/.loader-done
-LOADERBOOTSTRAP_COOKIE=	${WORKDIR}/.loader_bootstrap-done
-PACKAGE_COOKIE=		${WORKDIR}/.package-done
-PATCH_COOKIE=		${WORKDIR}/.patch-done
-PORTS_COOKIE=		${WORKDIR}/.ports-done
-SCRIPTS_COOKIE=		${WORKDIR}/.scripts-done
-WORKDIR_COOKIE=		${WORKDIR}/.workdir-done
-WORLD_EXTRACT_COOKIE=	${WORKDIR}/.world_extract-done
+BASE_COOKIE=		${WRKDIR}/.base-done
+BASEDIR_COOKIE=		${WRKDIR}/.basedir-done
+BOOTSTRAP_COOKIE=	${WRKDIR}/.bootstrap-done
+BOOTSTRAPDIR_COOKIE=	${WRKDIR}/.bootstrapdir-done
+BOOTSTRAPSCRIPT_COOKIE=	${WRKDIR}/.bootstrapscript-done
+COMPRESS_COOKIE=	${WRKDIR}/.compress-dir
+CONFIG_COPY_COOKIE=	${WRKDIR}/.config_copy-done
+FILES_COPY_COOKIE=	${WRKDIR}/.files_copy-done
+KERNEL_COPY_COOKIE=	${WRKDIR}/.kernel_copy-done
+KERNEL_EXTRACT_COOKIE=	${WRKDIR}/.kernel_extract-done
+LOADER_COOKIE=		${WRKDIR}/.loader-done
+LOADERBOOTSTRAP_COOKIE=	${WRKDIR}/.loader_bootstrap-done
+PACKAGE_COOKIE=		${WRKDIR}/.package-done
+PATCH_COOKIE=		${WRKDIR}/.patch-done
+PORTS_COOKIE=		${WRKDIR}/.ports-done
+SCRIPTS_COOKIE=		${WRKDIR}/.scripts-done
+WRKDIR_COOKIE=		${WRKDIR}/.workdir-done
+WORLD_EXTRACT_COOKIE=	${WRKDIR}/.world_extract-done
 
 #.SILENT:
 .ORDER: ${ISOFILE} ${UFSFILE}
@@ -119,7 +119,7 @@ live: iso-live ufs-live
 clean:
 	@${ECHO} "===> Cleaning working area..."
 	[ -z "`${MOUNT} | ${GREP} ${BASEDIR}`" ] || ${UMOUNT} `${MOUNT} | ${GREP} ${BASEDIR} | ${CUT} -f 3 -d ' ' | ${SORT} -r`
-	-${RM} -rf ${WORKDIR} 2> /dev/null || (${CHFLAGS} -R 0 ${WORKDIR}; ${RM} -rf ${WORKDIR})
+	-${RM} -rf ${WRKDIR} 2> /dev/null || (${CHFLAGS} -R 0 ${WRKDIR}; ${RM} -rf ${WRKDIR})
 
 iso: ${ISOFILE}
 	@${ECHO} "=== Created ISO image: ${ISOFILE} ==="
@@ -152,16 +152,16 @@ usb-live:
 	@${ECHO} "===> Writing live UFS image to ${DEV}"
 	${MAKE} partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSLIVEFILE}
 
-${WORKDIR_COOKIE}:
+${WRKDIR_COOKIE}:
 	@${ECHO} "===> Making working directory"
-	${MKDIR} -p ${WORKDIR}
-	${CHOWN} root:wheel ${WORKDIR}
+	${MKDIR} -p ${WRKDIR}
+	${CHOWN} root:wheel ${WRKDIR}
 
 	${MKDIR} -p ${DISTFILES} ${PKGDIR}
 
-	@${TOUCH} ${WORKDIR_COOKIE}
+	@${TOUCH} ${WRKDIR_COOKIE}
 
-${BASEDIR_COOKIE}: ${WORKDIR_COOKIE}
+${BASEDIR_COOKIE}: ${WRKDIR_COOKIE}
 	@${ECHO} "===> Making base directory"
 	${MKDIR} -p ${BASEDIR}
 
@@ -354,17 +354,17 @@ ${BASECOMPRESSEDIMAGE}: ${UFSFILE}
 
 ${BOOTSTRAPCOMPRESSEDIMAGE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	@${ECHO} "===> Compressing bootstrap UFS Image..."
-	${MV} ${BOOTSTRAPDIR}/boot ${WORKDIR}/
+	${MV} ${BOOTSTRAPDIR}/boot ${WRKDIR}/
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 	${MAKEFS} ${BOOTSTRAPCOMPRESSEDIMAGE} ${BOOTSTRAPDIR} \
-	  || (${MV} ${WORKDIR}/boot ${BOOTSTRAPDIR}/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
+	  || (${MV} ${WRKDIR}/boot ${BOOTSTRAPDIR}/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
 	${TUNEFS} -L ${NAME_BTSTRP} ${BOOTSTRAPCOMPRESSEDIMAGE}
 	${GZIP} -9 ${BOOTSTRAPCOMPRESSEDIMAGE}
 	${MV} ${BOOTSTRAPCOMPRESSEDIMAGE}.gz ${BOOTSTRAPCOMPRESSEDIMAGE}
 
-	${MV} ${WORKDIR}/boot ${BOOTSTRAPDIR}/
+	${MV} ${WRKDIR}/boot ${BOOTSTRAPDIR}/
 	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 ${LOADERBOOTSTRAP_COOKIE}: ${BOOTSTRAP_COOKIE}
@@ -380,7 +380,7 @@ ${LOADERBOOTSTRAP_COOKIE}: ${BOOTSTRAP_COOKIE}
 
 ${ISOMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	@${ECHO} "===> Creating Memory based Live ISO image"
-	${CP} -p ${LOADERBOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
+	${CP} -p ${LOADERBOOTSTRAPDIR}/boot/loader.conf ${WRKDIR}/
 	${ECHO} >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
@@ -390,14 +390,14 @@ ${ISOMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	${LN} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
 	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME_MEM_LIVE} -o ${ISOMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
-	  || (${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
+	  || (${MV} ${WRKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
 
-	${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
+	${MV} ${WRKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
 	${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
 ${UFSMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	@${ECHO} "===> Creating Memory based Live UFS image"
-	${CP} -p ${LOADERBOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
+	${CP} -p ${LOADERBOOTSTRAPDIR}/boot/loader.conf ${WRKDIR}/
 	${ECHO} >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_load=\"YES\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "rootimg_type=\"mfs_root\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
@@ -407,10 +407,10 @@ ${UFSMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	${LN} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
 	${MAKEFS} ${UFSMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
-	  || (${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
+	  || (${MV} ${WRKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
 	${TUNEFS} -L ${NAME_MEM_LIVE} ${UFSLIVEFILE}
 
-	${MV} ${WORKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
+	${MV} ${WRKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/
 	${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
 ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
@@ -492,8 +492,8 @@ ${SCRIPTS_COOKIE}: ${PORTS_COOKIE}
 # Create an ISO image (from the base image)
 ${ISOFILE}: ${BASE_COOKIE}
 	@${ECHO} "===> Creating ISO image"
-	${CP} -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
-	${CP} -p ${BASEDIR}/etc/rc.conf ${WORKDIR}/
+	${CP} -p ${BASEDIR}/boot/loader.conf ${WRKDIR}/
+	${CP} -p ${BASEDIR}/etc/rc.conf ${WRKDIR}/
 	${ECHO} >> ${BASEDIR}/boot/loader.conf
 	${ECHO} "vfs.root.mountfrom=\"cd9660:/dev/iso9660/${NAME}\"" >> ${BASEDIR}/boot/loader.conf
 	if [ -z "`${GREP} root_rw_${MOUNT}= ${BASEDIR}/etc/rc.conf`" ]; then \
@@ -502,52 +502,52 @@ ${ISOFILE}: ${BASE_COOKIE}
 	fi
 
 	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME} -o ${ISOFILE} ${BASEDIR} \
-          || (${MV} ${WORKDIR}/rc.conf ${BASEDIR}/etc/; ${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/; ${FALSE})
+          || (${MV} ${WRKDIR}/rc.conf ${BASEDIR}/etc/; ${MV} ${WRKDIR}/loader.conf ${BASEDIR}/boot/; ${FALSE})
 
-	${MV} ${WORKDIR}/rc.conf ${BASEDIR}/etc/
-	${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/
+	${MV} ${WRKDIR}/rc.conf ${BASEDIR}/etc/
+	${MV} ${WRKDIR}/loader.conf ${BASEDIR}/boot/
 
 # Create an ISO image with editable filesystem (live)
 ${ISOLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	@${ECHO} "===> Creating Live ISO image"
-	${CP} -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
+	${CP} -p ${BOOTSTRAPDIR}/boot/loader.conf ${WRKDIR}/
 	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "vfs.root.mountfrom=\"cd9660:/dev/iso9660/${NAME_LIVE}\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME_LIVE} -o ${ISOLIVEFILE} ${BOOTSTRAPDIR} \
-	  || (${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
+	  || (${MV} ${WRKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
 
-	${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
+	${MV} ${WRKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
 	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 # Create an UFS image (from the base image)
 ${UFSFILE}: ${BASE_COOKIE}
 	@${ECHO} "===> Creating UFS Image"
-	${CP} -p ${BASEDIR}/boot/loader.conf ${WORKDIR}/
+	${CP} -p ${BASEDIR}/boot/loader.conf ${WRKDIR}/
 	${ECHO} >> ${BASEDIR}/boot/loader.conf
 	${ECHO} "vfs.root.mountfrom=\"ufs:/dev/ufs/${NAME}\"" >> ${BASEDIR}/boot/loader.conf
 
 	${MAKEFS} ${UFSFILE} ${BASEDIR} \
-	  || (${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/; ${FALSE})
+	  || (${MV} ${WRKDIR}/loader.conf ${BASEDIR}/boot/; ${FALSE})
 	${TUNEFS} -L ${NAME} ${UFSFILE}
 
-	${MV} ${WORKDIR}/loader.conf ${BASEDIR}/boot/
+	${MV} ${WRKDIR}/loader.conf ${BASEDIR}/boot/
 
 ${UFSLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	@${ECHO} "===> Creating Live UFS image"
-	${CP} -p ${BOOTSTRAPDIR}/boot/loader.conf ${WORKDIR}/
+	${CP} -p ${BOOTSTRAPDIR}/boot/loader.conf ${WRKDIR}/
 	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "vfs.root.mountfrom=\"ufs:/dev/ufs/${NAME_LIVE}\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
 	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 	${MAKEFS} ${UFSLIVEFILE} ${BOOTSTRAPDIR} \
-	  || (${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
+	  || (${MV} ${WRKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
 	${TUNEFS} -L ${NAME_LIVE} ${UFSLIVEFILE}
 
-	${MV} ${WORKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
+	${MV} ${WRKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/
 	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 partition_usb: ${IMAGEFILE}
@@ -557,9 +557,9 @@ partition_usb: ${IMAGEFILE}
 	${ECHO} "8 partitions: \
 ^a: `du -Ak ${IMAGEFILE} | ${CUT} -f 1`k * 4.2BSD \
 ^b: * * 4.2BSD \
-^c: * * unused" | tr '^' '\n' >> ${WORKDIR}/${BSDLABEL}
-	${BSDLABEL} -R ${DEV}s1 ${WORKDIR}/${BSDLABEL}
-	${RM} ${WORKDIR}/${BSDLABEL}
+^c: * * unused" | tr '^' '\n' >> ${WRKDIR}/${BSDLABEL}
+	${BSDLABEL} -R ${DEV}s1 ${WRKDIR}/${BSDLABEL}
+	${RM} ${WRKDIR}/${BSDLABEL}
 	${NEWFS} -EUL ${NAME_UFS} ${DEV}s1b
 
 copy_ufs: ${IMAGEFILE}
