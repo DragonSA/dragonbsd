@@ -438,6 +438,7 @@ _MOUNTDIRS=${BASEDIR}/tmp ${BASEDIR}/dev ${BASEDIR}/usr/freebsd ${BASEDIR}/usr/p
 
 ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 	@${ECHO} "===> Installing ports..."
+.if !empty(${PORTS})
 	[ -z "`${MOUNT} | ${GREP} ${BASEDIR}`" ] || ${UMOUNT} `${MOUNT} | ${GREP} ${BASEDIR} | ${CUT} -f 3 -d ' ' | ${SORT} -r`
 	${MKDIR} -p ${BASEDIR}/usr/ports ${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd
 	${MOUNT} -t nullfs /usr/ports ${BASEDIR}/usr/ports
@@ -468,6 +469,7 @@ ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 	done
 
 	${UMOUNT} ${_MOUNTDIRS}
+.endif
 
 	@${TOUCH} ${PORTS_COOKIE}
 
