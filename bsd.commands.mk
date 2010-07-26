@@ -4,6 +4,7 @@
 BSD_COMMANDS_MK=	1
 
 BSDLABEL?=	bsdlabel
+CDRECORD?=	cdrecord
 CHFLAGS?=	chflags
 CHMOD?=		chmod
 CHOWN?=		chown
