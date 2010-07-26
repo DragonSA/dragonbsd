@@ -25,9 +25,9 @@ TARGET?=	${UNAME_p}
 ## Working directories
 UNAME_p!=	${UNAME} -p
 . if ${TARGET} == ${UNAME_p}
-WRKDIR?=	${PWD}/work
+WRKDIR?=	${.CURDIR}/work
 .else
-WRKDIR?=	${PWD}/work/${TARGET}
+WRKDIR?=	${.CURDIR}/work/${TARGET}
 .endif
 BASEDIR?=	${WRKDIR}/base
 BOOTSTRAPDIR?=	${WRKDIR}/bootstrap
@@ -134,8 +134,8 @@ ufs-live: ${UFSLIVEFILE}
 	@${ECHO} "=== Created live UFS image: ${UFSLIVEFILE} ==="
 
 cd-live:
-	#@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make cd-live DEV=..."; ${ECHO} "Possible devices:"; ${CDRECORD} -scanbus; ${FALSE})
-	@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
+	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make cd-live DEV=..."; ${ECHO} "Possible devices:"; ${CDRECORD} -scanbus; ${FALSE})
+	#@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
 	@${ECHO} "===> Writing ISO image to ${DEV}"
 	${MAKE} burn_iso DEV=${DEV} IMAGEFILE=${ISOLIVEFILE}
 
