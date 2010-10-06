@@ -15,7 +15,7 @@ NAME_MEM_LIVE?=	${NAME}MEMLive
 NAME_UFS?=	${NAME}UFS
 
 MDMFS_SIZE?=	32m
-SCRIPTS?=	
+SCRIPTS?=
 
 ## Kernel/world build options
 SRCDIR?=	/usr/src
@@ -24,10 +24,11 @@ TARGET?=	${UNAME_p}
 
 ## Working directories
 UNAME_p!=	${UNAME} -p
+WRKSRC?=	${.CURDIR}/
 . if ${TARGET} == ${UNAME_p}
-WRKDIR?=	${.CURDIR}/work
+WRKDIR?=	${WRKSRC}/${NAME}
 .else
-WRKDIR?=	${.CURDIR}/work/${TARGET}
+WRKDIR?=	${WRKSRC}/${NAME}-${TARGET}
 .endif
 BASEDIR?=	${WRKDIR}/base
 BOOTSTRAPDIR?=	${WRKDIR}/bootstrap
