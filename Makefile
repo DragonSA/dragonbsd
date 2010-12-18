@@ -24,7 +24,7 @@ TARGET?=	${UNAME_p}
 
 ## Working directories
 UNAME_p!=	${UNAME} -p
-WRKSRC?=	${.CURDIR}/
+WRKSRC?=	${.CURDIR}
 . if ${TARGET} == ${UNAME_p}
 WRKDIR?=	${WRKSRC}/${NAME}
 .else
@@ -32,6 +32,7 @@ WRKDIR?=	${WRKSRC}/${NAME}-${TARGET}
 .endif
 BASEDIR?=	${WRKDIR}/base
 BOOTSTRAPDIR?=	${WRKDIR}/bootstrap
+LOADERBOOTSTRAPDIR?=	${WRKDIR}/loader_bootstrap
 
 ## Source files
 DISTFILES?=	${PWD}/distfiles
@@ -117,6 +118,8 @@ all: iso iso-live ufs ufs-live
 
 live: iso-live ufs-live
 
+memlive: iso-memlive ufs-memlive
+
 clean:
 	@${ECHO} "===> Cleaning working area..."
 	[ -z "`${MOUNT} | ${GREP} ${BASEDIR}`" ] || ${UMOUNT} `${MOUNT} | ${GREP} ${BASEDIR} | ${CUT} -f 3 -d ' ' | ${SORT} -r`
@@ -128,30 +131,47 @@ iso: ${ISOFILE}
 iso-live: ${ISOLIVEFILE}
 	@${ECHO} "=== Created live ISO image: ${ISOLIVEFILE} ==="
 
+iso-memlive: ${ISOMEMLIVEFILE}
+	@${ECHO} "=== Created live memory based ISO image: ${ISOMEMLIVEFILE} ==="
+
 ufs: ${UFSFILE}
 	@${ECHO} "=== Created UFS image: ${UFSFILE} ==="
 
 ufs-live: ${UFSLIVEFILE}
 	@${ECHO} "=== Created live UFS image: ${UFSLIVEFILE} ==="
 
+ufs-memlive: ${UFSMEMLIVEFILE}
+	@${ECHO} "=== Created live memory based UFS image: ${UFSMEMLIVEFILE} ==="
+
+cd:
+	make do-cd CD_DESCR="" CD_TYPE="cd" IMAGEFILE=${ISOFILE}
+
 cd-live:
-	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make cd-live DEV=..."; ${ECHO} "Possible devices:"; ${CDRECORD} -scanbus; ${FALSE})
+	make do-cd CD_DESCR="live " CD_TYPE="cd-live" IMAGEFILE=${ISOLIVEFILE}
+
+cd-memlive:
+	make do-cd CD_DESCR="live memory based " CD_TYPE="cd-memlive" IMAGEFILE=${ISOMEMLIVEFILE}
+
+do-cd:
+	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make ${CD_TYPE} DEV=..."; ${ECHO} "Possible devices:"; ${CDRECORD} -scanbus; ${FALSE})
 	#@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
-	@${ECHO} "===> Writing ISO image to ${DEV}"
-	${MAKE} burn_iso DEV=${DEV} IMAGEFILE=${ISOLIVEFILE}
+	@${ECHO} "===> Writing ${CD_DESCR}ISO image to ${DEV}"
+	${MAKE} burn_iso DEV=${DEV}
 
 usb:
-	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make ufs DEV=..."; ${FALSE})
-	@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
-	@${ECHO} "===> Writing UFS image to ${DEV}"
-	${MAKE} partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSFILE}
-
+	make do-cd USB_DESCR="" USB_TYPE="cd" IMAGEFILE=${USBFILE}
 
 usb-live:
-	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make ufs-live DEV=..."; ${FALSE})
+	make do-cd USB_DESCR="live " USB_TYPE="cd-live" IMAGEFILE=${USBLIVEFILE}
+
+usb-memlive:
+	make do-cd USB_DESCR="live memory based " USB_TYPE="cd-memlive" IMAGEFILE=${USBMEMLIVEFILE}
+
+do-usb:
+	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make ${USB_TYPE} DEV=..."; ${FALSE})
 	@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
-	@${ECHO} "===> Writing live UFS image to ${DEV}"
-	${MAKE} partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${UFSLIVEFILE}
+	@${ECHO} "===> Writing ${UFS_DESCR}UFS image to ${DEV}"
+	${MAKE} partition_usb copy_ufs DEV=${DEV}
 
 ${WRKDIR_COOKIE}:
 	@${ECHO} "===> Making working directory"
@@ -362,14 +382,14 @@ ${BOOTSTRAPCOMPRESSEDIMAGE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	${MAKEFS} ${BOOTSTRAPCOMPRESSEDIMAGE} ${BOOTSTRAPDIR} \
 	  || (${MV} ${WRKDIR}/boot ${BOOTSTRAPDIR}/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
 	${TUNEFS} -L ${NAME_BTSTRP} ${BOOTSTRAPCOMPRESSEDIMAGE}
-	${GZIP} -9 ${BOOTSTRAPCOMPRESSEDIMAGE}
+	${GZIP} -f9 ${BOOTSTRAPCOMPRESSEDIMAGE}
 	${MV} ${BOOTSTRAPCOMPRESSEDIMAGE}.gz ${BOOTSTRAPCOMPRESSEDIMAGE}
 
 	${MV} ${WRKDIR}/boot ${BOOTSTRAPDIR}/
 	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 ${LOADERBOOTSTRAP_COOKIE}: ${BOOTSTRAP_COOKIE}
-	@${ECHO} "===> Creating loader ${ENV}ironment for compressed bootstrap image..."
+	@${ECHO} "===> Creating loader environment for compressed bootstrap image..."
 	${MKDIR} -p ${LOADERBOOTSTRAPDIR} ${LOADERBOOTSTRAPDIR}/usr/lib
 
 	-(${TAR} -C ${BOOTSTRAPDIR} -cf - boot | ${TAR} -C ${LOADERBOOTSTRAPDIR} -xf -)
