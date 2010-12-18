@@ -144,34 +144,34 @@ ufs-memlive: ${UFSMEMLIVEFILE}
 	@${ECHO} "=== Created live memory based UFS image: ${UFSMEMLIVEFILE} ==="
 
 cd:
-	make do-cd CD_DESCR="" CD_TYPE="cd" IMAGEFILE=${ISOFILE}
+	make do-cd CD_DESCR="" CD_TYPE="cd" IMAGEFILE=${ISOFILE} DEV=${DEV}
 
 cd-live:
-	make do-cd CD_DESCR="live " CD_TYPE="cd-live" IMAGEFILE=${ISOLIVEFILE}
+	make do-cd CD_DESCR="live " CD_TYPE="cd-live" IMAGEFILE=${ISOLIVEFILE} DEV=${DEV}
 
 cd-memlive:
-	make do-cd CD_DESCR="live memory based " CD_TYPE="cd-memlive" IMAGEFILE=${ISOMEMLIVEFILE}
+	make do-cd CD_DESCR="live memory based " CD_TYPE="cd-memlive" IMAGEFILE=${ISOMEMLIVEFILE} DEV=${DEV}
 
 do-cd:
 	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make ${CD_TYPE} DEV=..."; ${ECHO} "Possible devices:"; ${CDRECORD} -scanbus; ${FALSE})
 	#@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
 	@${ECHO} "===> Writing ${CD_DESCR}ISO image to ${DEV}"
-	${MAKE} burn_iso DEV=${DEV}
+	${MAKE} burn_iso DEV=${DEV} IMAGEFILE=${IMAGEFILE}
 
 usb:
-	make do-cd USB_DESCR="" USB_TYPE="cd" IMAGEFILE=${USBFILE}
+	make do-cd USB_DESCR="" USB_TYPE="cd" IMAGEFILE=${USBFILE} DEV=${DEV}
 
 usb-live:
-	make do-cd USB_DESCR="live " USB_TYPE="cd-live" IMAGEFILE=${USBLIVEFILE}
+	make do-cd USB_DESCR="live " USB_TYPE="cd-live" IMAGEFILE=${USBLIVEFILE} DEV=${DEV}
 
 usb-memlive:
-	make do-cd USB_DESCR="live memory based " USB_TYPE="cd-memlive" IMAGEFILE=${USBMEMLIVEFILE}
+	make do-cd USB_DESCR="live memory based " USB_TYPE="cd-memlive" IMAGEFILE=${USBMEMLIVEFILE} DEV=${DEV}
 
 do-usb:
 	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make ${USB_TYPE} DEV=..."; ${FALSE})
 	@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
 	@${ECHO} "===> Writing ${UFS_DESCR}UFS image to ${DEV}"
-	${MAKE} partition_usb copy_ufs DEV=${DEV}
+	${MAKE} partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${IMAGEFILE}
 
 ${WRKDIR_COOKIE}:
 	@${ECHO} "===> Making working directory"
@@ -377,16 +377,16 @@ ${BOOTSTRAPCOMPRESSEDIMAGE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	@${ECHO} "===> Compressing bootstrap UFS Image..."
 	${MV} ${BOOTSTRAPDIR}/boot ${WRKDIR}/
 
-	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
+	${CP} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 	${MAKEFS} ${BOOTSTRAPCOMPRESSEDIMAGE} ${BOOTSTRAPDIR} \
 	  || (${MV} ${WRKDIR}/boot ${BOOTSTRAPDIR}/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
+	${MV} ${WRKDIR}/boot ${BOOTSTRAPDIR}/
+	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
+
 	${TUNEFS} -L ${NAME_BTSTRP} ${BOOTSTRAPCOMPRESSEDIMAGE}
 	${GZIP} -f9 ${BOOTSTRAPCOMPRESSEDIMAGE}
 	${MV} ${BOOTSTRAPCOMPRESSEDIMAGE}.gz ${BOOTSTRAPCOMPRESSEDIMAGE}
-
-	${MV} ${WRKDIR}/boot ${BOOTSTRAPDIR}/
-	${RM} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 ${LOADERBOOTSTRAP_COOKIE}: ${BOOTSTRAP_COOKIE}
 	@${ECHO} "===> Creating loader environment for compressed bootstrap image..."
@@ -408,7 +408,7 @@ ${ISOMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	${ECHO} "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "vfs.root.mountfrom=\"ufs:/dev/ufs/${NAME_BTSTRP}\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 
-	${LN} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
+	${CP} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
 	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME_MEM_LIVE} -o ${ISOMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
 	  || (${MV} ${WRKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
@@ -425,7 +425,7 @@ ${UFSMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 	${ECHO} "rootimg_name=\"/boot/kernel/bootstrap.ufs\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "vfs.root.mountfrom=\"ufs:/dev/ufs/${NAME_BTSTRP}\"" >> ${LOADERBOOTSTRAPDIR}/boot/loader.conf
 
-	${LN} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
+	${CP} ${BASECOMPRESSEDIMAGE} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz
 
 	${MAKEFS} ${UFSMEMLIVEFILE} ${LOADERBOOTSTRAPDIR} \
 	  || (${MV} ${WRKDIR}/loader.conf ${LOADERBOOTSTRAPDIR}/boot/; ${RM} ${LOADERBOOTSTRAPDIR}/boot/kernel/bootstrap.ufs.gz; ${FALSE})
@@ -535,7 +535,7 @@ ${ISOLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "vfs.root.mountfrom=\"cd9660:/dev/iso9660/${NAME_LIVE}\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
-	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
+	${CP} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 	${MKISOFS} ${MKISOFLAGS}  -b boot/cdboot --no-emul-boot -volid ${NAME_LIVE} -o ${ISOLIVEFILE} ${BOOTSTRAPDIR} \
 	  || (${MV} ${WRKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
@@ -562,7 +562,7 @@ ${UFSLIVEFILE}: ${BOOTSTRAP_COOKIE} ${BASECOMPRESSEDIMAGE}
 	${ECHO} >> ${BOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} "vfs.root.mountfrom=\"ufs:/dev/ufs/${NAME_LIVE}\"" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
-	${LN} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
+	${CP} ${BASECOMPRESSEDIMAGE} ${BOOTSTRAPDIR}/base.ufs.uzip
 
 	${MAKEFS} ${UFSLIVEFILE} ${BOOTSTRAPDIR} \
 	  || (${MV} ${WRKDIR}/loader.conf ${BOOTSTRAPDIR}/boot/; ${RM} ${BOOTSTRAPDIR}/base.ufs.uzip; ${FALSE})
@@ -590,8 +590,8 @@ copy_ufs: ${IMAGEFILE}
 burn_iso: ${IMAGEFILE}
 	@${ECHO} "===> Burning ISO image to device ${DEV}..."
 .if defined(BLANK)
-	${CDRECORD} blank=${BLANK} dev=${DEV} -eject -data ${IMAGEFILE}
+	${CDRECORD} -v blank=${BLANK} dev=${DEV} -eject -data ${IMAGEFILE}
 .else
-	${CDRECORD} dev=${DEV} -overburn -eject -data ${IMAGEFILE}
+	${CDRECORD} -v dev=${DEV} -overburn -eject -data ${IMAGEFILE}
 .endif
 	#burncd -e -f ${DEV} -s max blank data ${IMAGEFILE} fixate
