@@ -29,6 +29,7 @@ MOUNT?=		mount
 MV?=		mv
 NEWFS?=		newfs
 RM?=		rm
+SED?=		sed
 TAR?=		tar
 TOUCH?=		touch
 TUNEFS?=	tunefs
