@@ -1,0 +1,64 @@
+#!/rescue/sh
+PATH=/rescue
+
+MDMFS_SIZE=%%MDMFS_SIZE%%
+NAME_MEM_LIVE=%%NAME_MEM_LIVE%%
+NAME_UFS=%%NAME_UFS%%
+
+trap "@echo Recovery console: ; PATH=/rescue /rescue/csh -i ; trap '' EXIT ; exit" 1 2 3 6 15 EXIT
+
+set -e
+
+if [ -f /base.ufs.uzip ]
+then
+  echo "Mounting compressed base:"
+  mount -o ro /dev/$(mdconfig -a -t vnode -o readonly -f /base.ufs.uzip).uzip /base
+else
+  echo "Mounting base:"
+  mount -o ro /dev/$(mdconfig -a -t vnode -o readonly -f /base.ufs) /base
+fi
+
+if [ -w /dev/ufs/${NAME_UFS} ]
+then
+  echo -n "Overlaying filesystem:"
+  mount /dev/ufs/${NAME_UFS} /overlay
+else
+  echo -n "Allocating temporary filesystem (${MDMFS_SIZE}):"
+  mdmfs -s ${MDMFS_SIZE} md /overlay
+  echo .
+ 
+  echo -n "Overlaying temporary filesystem:"
+fi
+mount -t unionfs -o noatime -o copymode=transparent /overlay /base
+echo .
+
+mount -t devfs devfs /base/dev
+
+echo "Patching /etc/rc.conf"
+if [ ! -f /base/etc/rc.conf ]
+then
+  echo "root_rw_mount=\"NO\"" > /base/etc/rc.conf
+else
+  case $(cat /base/etc/rc.conf) in
+    *root_rw_mount=*)
+      ;;
+    *)
+      echo >> /base/etc/rc.conf
+      echo "root_rw_mount=\"NO\"" >> /base/etc/rc.conf
+      ;;
+  esac
+fi
+
+CD_DEV=$(dmesg | sed -n -e "s|.* a\(cd[0-9]\+\) .*iso9660/${NAME_MEM_LIVE}.*|\1|p" | sed "1 q")
+if [ -n "$CD_DEV" ]
+then
+  echo "Ejecting CD-ROM..."
+  if [ -f /base/boot/kernel/atapicam.ko -a -z "$(kldstat -v | grep ata/atapicam)" ]
+  then
+    kldload /base/boot/kernel/atapicam.ko
+  fi
+  camcontrol eject $CD_DEV
+fi
+
+echo "Chroot to base..."
+trap "" EXIT
