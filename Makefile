@@ -1,111 +1,12 @@
 # USER DEFINABLE VARIABLES
 
+.include "bsd.commands.mk"
+.include "bsd.doc.mk"
+.include "bsd.variables.mk"
+
 .if defined(CONFIG)
 .	include	"${CONFIG}"
 .endif
-
-.include "bsd.commands.mk"
-.include "bsd.doc.mk"
-
-# The name of the system
-NAME?=		DragonBSD
-NAME_BTSTRP?=	${NAME}BTSTRP
-NAME_LIVE?=	${NAME}Live
-NAME_MEM_LIVE?=	${NAME}MEMLive
-NAME_UFS?=	${NAME}UFS
-
-MDMFS_SIZE?=	32m
-SCRIPTS?=
-
-## Kernel/world build options
-SRCDIR?=	/usr/src
-KERNCONF?=	GENERIC
-TARGET?=	${UNAME_p}
-
-## Working directories
-UNAME_p!=	${UNAME} -p
-WRKSRC?=	${.CURDIR}
-. if ${TARGET} == ${UNAME_p}
-WRKDIR?=	${WRKSRC}/${NAME}
-.else
-WRKDIR?=	${WRKSRC}/${NAME}-${TARGET}
-.endif
-BASEDIR?=	${WRKDIR}/base
-BOOTSTRAPDIR?=	${WRKDIR}/bootstrap
-LOADERBOOTSTRAPDIR?=	${WRKDIR}/loader_bootstrap
-
-## Source files
-DISTFILES?=	${PWD}/distfiles
-FILESRC?=	${PWD}/files
-SCRIPTSDIR?=	${_MASTERSCRIPTSDIR}
-_MASTERSCRIPTSDIR= ${.CURDIR}/scripts
-
-.if ${TARGET} == ${UNAME_p}
-
-PKGDIR?=	${DISTFILES}/packages
-
-.  if ${KERNCONF} == GENERIC
-KERNELSRC?=	${DISTFILES}/kernel.tar.xz
-.  else
-KERNELSRC?=	${DISTFILES}/kernel-${KERNCONF}.tar.xz
-.  endif
-PKG_ENV_DIR?=	/home/pkg_env
-WORLDSRC?=	${DISTFILES}/world.tar.xz
-
-.else
-
-PKGDIR?=	${DISTFILES}/packages-${TARGET}
-
-.  if ${KERNCONF} == GENERIC
-KERNELSRC?=	${DISTFILES}/kernel-${TARGET}.tar.xz
-.  else
-KERNELSRC?=	${DISTFILES}/kernel-${KERNCONF}-${TARGET}.tar.xz
-.  endif
-PKG_ENV_DIR?=	/home/pkg_env_${TARGET}
-WORLDSRC?=	${DISTFILES}/world-${TARGET}.tar.xz
-
-.endif
-
-PKGS?=
-PORTS?=
-
-## Bootstrap information
-BOOTSTRAPDIRS+=		base boot dev overlay usr/lib
-BOOTSTRAPFILES+=	etc/login.conf
-BOOTSTRAPMODULES+=	zlib geom_uzip unionfs
-
-## Target images
-BASECOMPRESSEDIMAGE?=		${WRKDIR}/base.ufs.uzip
-BOOTSTRAPCOMPRESSEDIMAGE?=	${WRKDIR}/bootstrap.ufs.gz
-ISOFILE?=			${WRKDIR}/${NAME:L}.iso
-ISOMEMLIVEFILE?=		${WRKDIR}/${NAME:L}-mem-live.iso
-ISOLIVEFILE?=			${WRKDIR}/${NAME:L}-live.iso
-UFSFILE?=			${WRKDIR}/${NAME:L}.ufs
-UFSLIVEFILE?=			${WRKDIR}/${NAME:L}-live.ufs
-UFSMEMLIVEFILE?=		${WRKDIR}/${NAME:L}-mem-live.ufs
-
-## Sundry
-MKISOFLAGS=	-quiet -sysid FREEBSD -rock -untranslated-filenames -max-iso9660-filenames -iso-level 4
-
-## Name of cookies
-BASE_COOKIE=		${WRKDIR}/.base-done
-BASEDIR_COOKIE=		${WRKDIR}/.basedir-done
-BOOTSTRAP_COOKIE=	${WRKDIR}/.bootstrap-done
-BOOTSTRAPDIR_COOKIE=	${WRKDIR}/.bootstrapdir-done
-BOOTSTRAPSCRIPT_COOKIE=	${WRKDIR}/.bootstrapscript-done
-COMPRESS_COOKIE=	${WRKDIR}/.compress-dir
-CONFIG_COPY_COOKIE=	${WRKDIR}/.config_copy-done
-FILES_COPY_COOKIE=	${WRKDIR}/.files_copy-done
-KERNEL_COPY_COOKIE=	${WRKDIR}/.kernel_copy-done
-KERNEL_EXTRACT_COOKIE=	${WRKDIR}/.kernel_extract-done
-LOADER_COOKIE=		${WRKDIR}/.loader-done
-LOADERBOOTSTRAP_COOKIE=	${WRKDIR}/.loader_bootstrap-done
-PACKAGE_COOKIE=		${WRKDIR}/.package-done
-PATCH_COOKIE=		${WRKDIR}/.patch-done
-PORTS_COOKIE=		${WRKDIR}/.ports-done
-SCRIPTS_COOKIE=		${WRKDIR}/.scripts-done
-WRKDIR_COOKIE=		${WRKDIR}/.workdir-done
-WORLD_EXTRACT_COOKIE=	${WRKDIR}/.world_extract-done
 
 #.SILENT:
 .ORDER: ${ISOFILE} ${UFSFILE}
@@ -169,9 +70,9 @@ usb-memlive:
 
 do-usb:
 	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make ${USB_TYPE} DEV=..."; ${FALSE})
-	@[ -c ${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
-	@${ECHO} "===> Writing ${UFS_DESCR}UFS image to ${DEV}"
-	${MAKE} partition_usb copy_ufs DEV=${DEV} IMAGEFILE=${IMAGEFILE}
+	@[ -c /dev/${DEV} ] || (${ECHO} "Please specify a valid character device"; ${FALSE})
+	@${ECHO} "===> Writing ${UFS_DESCR}UFS image to /dev/${DEV}"
+	${MAKE} partition_usb copy_ufs DEV=/dev/${DEV} IMAGEFILE=${IMAGEFILE}
 
 ${WRKDIR_COOKIE}:
 	@${ECHO} "===> Making working directory"
@@ -275,8 +176,8 @@ ${PATCH_COOKIE}: ${LOADER_COOKIE}
 		fi \
 	done
 
-	${ECHO} init_script=\"/${CHROOT}\" >> ${BOOTSTRAPDIR}/boot/loader.conf
-	${ECHO} init_${CHROOT}=\"/base\" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} init_script=\"/chroot" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} init_chroot=\"/base\" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
 	@${TOUCH} ${PATCH_COOKIE}
 
@@ -305,65 +206,11 @@ ${COMPRESS_COOKIE}: ${KERNEL_COPY_COOKIE}
 # Write the bootstrap scripts
 ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 	@${ECHO} "===> Writing the bootstrap script"
-	${ECHO} '#!/rescue/sh \
-^PATH=/rescue \
-^trap "@echo Recovery console: ; PATH=/rescue /rescue/csh -i ; exit" 1 2 3 6 15 \
-^\
-set -e^\
-^\
-^if [ -f /base.ufs.uzip ] \
-^then \
-^  echo "Mounting compressed base:" \
-^  mount -o ro /dev/$$(mdconfig -a -t vnode -o readonly -f /base.ufs.uzip).uzip /base \
-^else \
-^  echo "Mounting base:" \
-^  mount -o ro /dev/$$(mdconfig -a -t vnode -o readonly -f /base.ufs) /base \
-^fi \
-^\
-^if [ -w /dev/ufs/${NAME_UFS} ] \
-^then \
-^  echo -n "Overlaying filesystem:" \
-^  mount /dev/ufs/${NAME_UFS} /overlay \
-^else \
-^  echo -n "Allocating temporary filesystem (${MDMFS_SIZE}):" \
-^  mdmfs -s ${MDMFS_SIZE} md /overlay \
-^  echo . \
-^  \
-^  echo -n "Overlaying temporary filesystem:" \
-^fi \
-^mount -t unionfs -o noatime -o copymode=transparent /overlay /base \
-^echo . \
-^\
-^mount -t devfs devfs /base/dev \
-^\
-^echo "Patching /etc/rc.conf" \
-^if [ ! -f /base/etc/rc.conf ] \
-^then \
-^  echo "root_rw_mount=\"NO\"" > /base/etc/rc.conf \
-^else \
-^  case $$(cat /base/etc/rc.conf) in \
-^    *root_rw_mount=*) \
-^      ;; \
-^    *) \
-^      echo >> /base/etc/rc.conf \
-^      echo "root_rw_mount=\"NO\"" >> /base/etc/rc.conf \
-^      ;; \
-^  esac \
-^fi \
-^\
-^CD_DEV=$$(dmesg | sed -n -e "s|.* a\(cd[0-9]\+\) .*iso9660/${NAME_MEM_LIVE}.*|\1|p" | sed "1 q") \
-^if [ -n "$$CD_DEV" ] \
-^then \
-^  echo "Ejecting CD-ROM..." \
-^  if [ -f /base/boot/kernel/atapicam.ko -a -z "$$(kldstat -v | grep ata/atapicam)" ] \
-^  then \
-^    kldload /base/boot/kernel/atapicam.ko \
-^  fi \
-^  camcontrol eject $$CD_DEV \
-^fi \
-^\
-^echo "Chroot to base..."' | tr '^' '\n' > ${BOOTSTRAPDIR}/${CHROOT}
-	${CHMOD} a+x ${BOOTSTRAPDIR}/${CHROOT}
+	${CP} ${CHROOT_SCRIPT} ${BOOTSTRAPDIR}/${CHROOT}
+	${CHMOD} a+x ${BOOTSTRAPDIR}/chroot
+	${SED} -i '' 	-e "s/%%MDMFS_SIZE%%/${MDMFS_SIZE}/" \
+			-e "s/%%NAME_MEM_LIVE%%/${NAME_MEM_LIVE}/" \
+			-e "s/%%NAME_UFS%%/${NAME_UFS}/"
 
 	@${TOUCH} ${BOOTSTRAPSCRIPT_COOKIE}
 
