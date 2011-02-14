@@ -176,7 +176,7 @@ ${PATCH_COOKIE}: ${LOADER_COOKIE}
 		fi \
 	done
 
-	${ECHO} init_script=\"/chroot" >> ${BOOTSTRAPDIR}/boot/loader.conf
+	${ECHO} init_script=\"/chroot\" >> ${BOOTSTRAPDIR}/boot/loader.conf
 	${ECHO} init_chroot=\"/base\" >> ${BOOTSTRAPDIR}/boot/loader.conf
 
 	@${TOUCH} ${PATCH_COOKIE}
@@ -207,10 +207,11 @@ ${COMPRESS_COOKIE}: ${KERNEL_COPY_COOKIE}
 ${BOOTSTRAPSCRIPT_COOKIE}: ${BOOTSTRAPDIR_COOKIE}
 	@${ECHO} "===> Writing the bootstrap script"
 	${CP} ${CHROOT_SCRIPT} ${BOOTSTRAPDIR}/${CHROOT}
-	${CHMOD} a+x ${BOOTSTRAPDIR}/chroot
 	${SED} -i '' 	-e "s/%%MDMFS_SIZE%%/${MDMFS_SIZE}/" \
 			-e "s/%%NAME_MEM_LIVE%%/${NAME_MEM_LIVE}/" \
-			-e "s/%%NAME_UFS%%/${NAME_UFS}/"
+			-e "s/%%NAME_UFS%%/${NAME_UFS}/" \
+			${BOOTSTRAPDIR}/chroot
+	${CHMOD} 0555 ${BOOTSTRAPDIR}/chroot
 
 	@${TOUCH} ${BOOTSTRAPSCRIPT_COOKIE}
 
