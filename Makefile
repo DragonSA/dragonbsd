@@ -1,8 +1,8 @@
 # USER DEFINABLE VARIABLES
 
-.include "bsd.commands.mk"
-.include "bsd.doc.mk"
-.include "bsd.variables.mk"
+.include "mk/bsd.commands.mk"
+.include "mk/bsd.doc.mk"
+.include "mk/bsd.variables.mk"
 
 .if defined(CONFIG)
 .	include	"${CONFIG}"
