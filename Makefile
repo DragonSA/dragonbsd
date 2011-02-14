@@ -159,13 +159,13 @@ do-cd:
 	${MAKE} burn_iso DEV=${DEV} IMAGEFILE=${IMAGEFILE}
 
 usb:
-	make do-cd USB_DESCR="" USB_TYPE="cd" IMAGEFILE=${USBFILE} DEV=${DEV}
+	make do-usb USB_DESCR="" USB_TYPE="cd" IMAGEFILE=${UFSFILE} DEV=${DEV}
 
 usb-live:
-	make do-cd USB_DESCR="live " USB_TYPE="cd-live" IMAGEFILE=${USBLIVEFILE} DEV=${DEV}
+	make do-usb USB_DESCR="live " USB_TYPE="cd-live" IMAGEFILE=${UFSLIVEFILE} DEV=${DEV}
 
 usb-memlive:
-	make do-cd USB_DESCR="live memory based " USB_TYPE="cd-memlive" IMAGEFILE=${USBMEMLIVEFILE} DEV=${DEV}
+	make do-usb USB_DESCR="live memory based " USB_TYPE="cd-memlive" IMAGEFILE=${UFSMEMLIVEFILE} DEV=${DEV}
 
 do-usb:
 	@[ -n "${DEV}" ] || (${ECHO} "Please specify a device using make ${USB_TYPE} DEV=..."; ${FALSE})
