@@ -104,6 +104,8 @@ help-config-all:
 	@${ECHO} "			[default: $${WRKDIR}/base]"
 	@${ECHO} "	BOOTSTRAPDIR:	Directory for bootstrap files"
 	@${ECHO} "			[default: $${WRKDIR}/bootstrap]"
+	@${ECHO} "	LOADERBOOTSTRAPDIR: Directory for memory bootstrap files"
+	@${ECHO} "			[default: $${WRKDIR}/loader_bootstrap]"
 	@${ECHO} "DISTFILES:	Location of system and port packages"
 	@${ECHO} "		[default: $${PWD}/distfiles]
 	@${ECHO} "	PKGDIR:		Location of port packages"
