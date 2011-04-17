@@ -1,0 +1,20 @@
+# Create the new git repository
+create repository dragonbsd
+end repository
+
+# Match trunk->master
+match /trunk/dragonbsd/
+  repository dragonbsd
+  branch master
+end match
+
+# Match tagged releases
+match /tags/([^/]+)/dragonbsd/
+  repository dragonbsd
+  branch refs/tags/\1
+  annotated true
+end match
+
+# Ignore everything else (but there should not be anything else)
+match /
+end match
