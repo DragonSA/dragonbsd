@@ -284,12 +284,13 @@ ${UFSMEMLIVEFILE}: ${BOOTSTRAPCOMPRESSEDIMAGE} ${LOADERBOOTSTRAP_COOKIE}
 
 ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
 	@${ECHO} "===> Installing packages..."
+.if ! empty(PKGS)
 	[ -z "`${MOUNT} | ${GREP} ${BASEDIR}`" ] || ${UMOUNT} `${MOUNT} | ${GREP} ${BASEDIR} | ${CUT} -f 3 -d ' ' | ${SORT} -r`
 	${MOUNT} -t devfs devfs ${BASEDIR}/dev
 	${MOUNT} -t nullfs ${PKGDIR} ${BASEDIR}/mnt
 	for PKG in ${PKGS}; \
 	do \
-		pkgs=`cd ${BASEDIR}/mnt/All; ls $${PKG}*t[bg]z 2> /dev/null || true`; \
+		pkgs=`cd ${BASEDIR}/mnt/All; ls $${PKG}*t[bgx]z 2> /dev/null || true`; \
 		if [ -n "$${pkgs}" ]; \
 		then \
 			${ECHO} "==> Installing packages: $${pkgs}"; \
@@ -300,21 +301,21 @@ ${PACKAGE_COOKIE}: ${WORLD_EXTRACT_COOKIE}
 		fi; \
 	done
 	${UMOUNT} ${BASEDIR}/dev ${BASEDIR}/mnt
-
+.endif
 	@${TOUCH} ${PACKAGE_COOKIE}
 
-_MOUNTDIRS=${BASEDIR}/tmp ${BASEDIR}/dev ${BASEDIR}/usr/freebsd ${BASEDIR}/usr/ports #${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd/packages
+_MOUNTDIRS=${BASEDIR}/tmp ${BASEDIR}/dev ${BASEDIR}/usr/ports ${BASEDIR}/home/distfiles ${BASEDIR}/usr/src
 
 ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 	@${ECHO} "===> Installing ports..."
-.if !empty(${PORTS})
+.if !empty(PORTS)
 	[ -z "`${MOUNT} | ${GREP} ${BASEDIR}`" ] || ${UMOUNT} `${MOUNT} | ${GREP} ${BASEDIR} | ${CUT} -f 3 -d ' ' | ${SORT} -r`
-	${MKDIR} -p ${BASEDIR}/usr/ports ${BASEDIR}/usr/ports/packages ${BASEDIR}/usr/freebsd
+	${MKDIR} -p ${BASEDIR}/usr/ports ${BASEDIR}/home/distfiles ${BASEDIR}/usr/src
 	${MOUNT} -t nullfs /usr/ports ${BASEDIR}/usr/ports
-	${MOUNT} -t nullfs /usr/freebsd ${BASEDIR}/usr/freebsd
+	${MOUNT} -t nullfs /usr/src ${BASEDIR}/usr/src
+	${MOUNT} -t nullfs /home/distfiles ${BASEDIR}/home/distfiles
 	${MOUNT} -t devfs devfs ${BASEDIR}/dev
 	${MOUNT} -t tmpfs tmpfs ${BASEDIR}/tmp
-	#${MOUNT} -t nullfs ${PKGDIR} ${BASEDIR}/usr/freebsd/packages
 	#${MOUNT} -t nullfs ${PKGDIR} ${BASEDIR}/usr/ports/packages
 
 	for PORT in ${PORTS}; \
@@ -322,14 +323,14 @@ ${PORTS_COOKIE}: ${PACKAGE_COOKIE}
 		if [ -d ${BASEDIR}/usr/ports/$${PORT} ]; \
 		then \
 			pkg=`${CHROOT} ${BASEDIR} ${MAKE} -C /usr/ports/$${PORT} package-name`; \
-			if [ ! -f "`ls ${BASEDIR}/usr/ports/packages/All/$${pkg}.t[bg]z 2> /dev/null`" ]; \
+			if [ ! -f "`ls ${BASEDIR}/usr/ports/packages/All/$${pkg}.t[bgx]z 2> /dev/null`" ]; \
 			then \
 				${ECHO} "==> Building port: $${PORT} ($${pkg})"; \
-				${CHROOT} ${BASEDIR} ${MAKE} -C /usr/ports/$${PORT} install package-recursive clean BATCH=yes DEPENDS_CLEAN=yes NOCLEANDEPENDS=yes || \
+				${CHROOT} ${BASEDIR} ${MAKE} -C /usr/ports/$${PORT} install clean BATCH=yes DEPENDS_CLEAN=yes NOCLEANDEPENDS=yes || \
 				  (${UMOUNT} ${_MOUNTDIRS}; ${FALSE}); \
 			else \
 				${ECHO} "==> Installing port: $${PORT} ($${pkg})"; \
-				${CHROOT} ${BASEDIR} sh -c "cd /usr/ports/packages/All && pkg_a${DD} -F $${pkg}.t[bg]z" || \
+				${CHROOT} ${BASEDIR} sh -c "cd /usr/ports/packages/All && pkg_a${DD} -F $${pkg}.t[bgx]z" || \
 				  (${UMOUNT} ${_MOUNTDIRS}; ${FALSE}); \
 			fi; \
 		else \
