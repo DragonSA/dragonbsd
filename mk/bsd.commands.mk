@@ -30,6 +30,7 @@ MV?=		mv
 NEWFS?=		newfs
 RM?=		rm
 SED?=		sed
+SORT?=		sort
 TAR?=		tar
 TOUCH?=		touch
 TUNEFS?=	tunefs
